@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model City {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  country     String
+  description String
+
+  // Bonuses
+  incomeBonus      Int   @default(0)
+  crimeBonus       Int   @default(0)
+  trainingBonus    Int   @default(0)
+  businessBonus    Int   @default(0)
+
+  // Travel Requirements
+  minLevel         Int      @default(1)
+  requiresCar      Boolean  @default(false)
+  requiresPlane    Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+
+  // Relations
+  characters  Character[]
+
+  @@map("cities")
+}
+
+model Character {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+
+  // Location
+  cityId    String?
+  city      City?    @relation(fields: [cityId], references: [id])
+
+  // Basic Stats
+  money         Int      @default(1000)
+  energy        Int      @default(100)
+  maxEnergy     Int      @default(100)
+  health        Int      @default(100)
+  maxHealth     Int      @default(100)
+
+  // Progression
+  level         Int      @default(1)
+  xp            Int      @default(0)
+  xpNeeded      Int      @default(100)
+  age           Int      @default(18)
+  ageInDays     Int      @default(0)
+
+  // Reputation & Rank
+  reputation    Int      @default(0)
+  rank          Int      @default(1)
+
+  // Career
+  education     String?
+  job           String?
+  jobTitle      String?
+  salary        Int      @default(0)
+
+  // Combat Stats
+  strength      Int      @default(10)
+  defense       Int      @default(10)
+  speed         Int      @default(10)
+  dexterity     Int      @default(10)
+
+  // Crime Stats
+  crimesCommitted      Int      @default(0)
+  jailTime             Int      @default(0)
+  criminalReputation   Int      @default(0)
+
+  // Assets
+  hasDriverLicense     Boolean  @default(false)
+  hasCar               Boolean  @default(false)
+  hasPlane             Boolean  @default(false)
+
+  // Timestamps
+  lastEnergyRegen   DateTime @default(now())
+  lastHealthRegen   DateTime @default(now())
+  lastAgeIncrement  DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  crimeHistory  CrimeHistory[]
+
+  @@index([cityId])
+  @@map("characters")
+}
+
+model CrimeHistory {
+  id          String    @id @default(cuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  crimeType   String
+  success     Boolean
+  moneyGained Int       @default(0)
+  xpGained    Int       @default(0)
+  jailTime    Int       @default(0)
+
+  timestamp   DateTime  @default(now())
+
+  @@index([characterId])
+  @@index([timestamp])
+  @@map("crime_history")
+}
+
+model GameEvent {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  userId    String?
+  username  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("game_events")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  message   String
+  
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("chat_messages")
+}

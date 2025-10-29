@@ -1,65 +1,155 @@
-import Image from "next/image";
+import Link from 'next/link'
 
-export default function Home() {
+export default function LandingPage() {
+  const stats = [
+    { label: 'Active Players', value: '1,234' },
+    { label: 'Money Stolen', value: '$50M+' },
+    { label: 'Crimes Committed', value: '10K+' },
+    { label: 'Active Gangs', value: '127' }
+  ]
+
+  const features = [
+    {
+      icon: '💰',
+      title: 'Build Your Empire',
+      description: 'Start from nothing. Rob, steal, and work your way to the top. Buy businesses, properties, and become the richest criminal in the city.'
+    },
+    {
+      icon: '🔫',
+      title: 'Commit Crimes',
+      description: 'From pickpocketing to bank heists. The bigger the risk, the bigger the reward. Build your reputation in the underworld.'
+    },
+    {
+      icon: '👥',
+      title: 'Form a Gang',
+      description: 'Join or create a gang. Fight for territory, organize heists, and dominate the city with your crew.'
+    },
+    {
+      icon: '🌍',
+      title: 'Expand Globally',
+      description: 'Start in one city, expand to others. Unlock international operations, smuggling routes, and global domination.'
+    }
+  ]
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-[#0f0f0f] text-[#d0d0d0]">
+      {/* Header */}
+      <header className="border-b border-[#333]">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#fff] uppercase tracking-wider">
+              LIFE SYNDICATE
+            </h1>
+            <p className="text-[10px] text-[#888] uppercase tracking-wider">
+              Build Your Criminal Empire
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <Link href="/login">
+              <button className="ls-btn">
+                Login
+              </button>
+            </Link>
+            <Link href="/register">
+              <button className="ls-btn ls-btn-primary">
+                Register
+              </button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="border-b border-[#333]">
+        <div className="max-w-7xl mx-auto px-6 py-20 text-center">
+          <h2 className="text-4xl font-bold text-[#fff] mb-4 uppercase tracking-wider">
+            Welcome to Life Syndicate
+          </h2>
+          <p className="text-lg text-[#888] mb-8 max-w-2xl mx-auto">
+            A text-based online RPG set in a dark, gritty underworld. Build your character, commit crimes, 
+            join gangs, and rise to the top of the criminal hierarchy.
+          </p>
+          <Link href="/register">
+            <button className="ls-btn ls-btn-primary text-base px-8 py-3">
+              JOIN NOW - IT'S FREE
+            </button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="border-b border-[#333]">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <div key={index} className="ls-section">
+                <div className="ls-section-content text-center">
+                  <p className="text-3xl font-bold text-[#5cb85c] mb-2">
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-[#888] uppercase tracking-wider">
+                    {stat.label}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="border-b border-[#333]">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <h3 className="text-2xl font-bold text-[#fff] mb-8 text-center uppercase tracking-wider">
+            Game Features
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {features.map((feature, index) => (
+              <div key={index} className="ls-section">
+                <div className="ls-section-content">
+                  <div className="flex items-start gap-4">
+                    <span className="text-4xl">{feature.icon}</span>
+                    <div>
+                      <h4 className="text-lg font-bold text-[#fff] mb-2">
+                        {feature.title}
+                      </h4>
+                      <p className="text-sm text-[#888]">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="border-b border-[#333]">
+        <div className="max-w-7xl mx-auto px-6 py-16 text-center">
+          <h3 className="text-3xl font-bold text-[#fff] mb-4 uppercase tracking-wider">
+            Ready to Start?
+          </h3>
+          <p className="text-lg text-[#888] mb-8">
+            Join thousands of players. Build your empire. Become a legend.
+          </p>
+          <Link href="/register">
+            <button className="ls-btn ls-btn-primary text-base px-8 py-3">
+              CREATE ACCOUNT
+            </button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-xs text-[#666]">
+            © 2025 Life Syndicate. All rights reserved.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </footer>
     </div>
-  );
+  )
 }

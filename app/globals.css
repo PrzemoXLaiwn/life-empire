@@ -1,26 +1,283 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #222222;
+  --bg-hover: #282828;
+  --border: #333333;
+  --border-light: #2a2a2a;
+  --header-bg: #252525;
+  --text-primary: #ffffff;
+  --text-secondary: #d0d0d0;
+  --text-muted: #888888;
+  --success: #5cb85c;
+  --danger: #d9534f;
+  --warning: #f0ad4e;
+  --info: #5bc0de;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+.ls-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.ls-section-header {
+  background: var(--header-bg);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ls-section-content {
+  padding: 1rem;
+}
+
+.ls-stat-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  padding: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.ls-stat-card:hover {
+  background: var(--bg-hover);
+  border-color: #444;
+}
+
+.ls-stat-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.ls-stat-info {
+  flex: 1;
+}
+
+.ls-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.ls-stat-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.ls-bar {
+  height: 3px;
+  background: #2a2a2a;
+  border: 1px solid #1a1a1a;
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.ls-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.ls-bar-text {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ls-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ls-table th {
+  background: var(--header-bg);
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border);
+}
+
+.ls-table td {
+  padding: 0.75rem;
+  border: 1px solid var(--border-light);
+  font-size: 11px;
+}
+
+.ls-table tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.ls-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid #444;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.ls-btn:hover {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.ls-btn-primary {
+  background: var(--success);
+  border-color: #4cae4c;
+}
+
+.ls-btn-primary:hover {
+  background: #4cae4c;
+}
+
+.ls-btn-danger {
+  background: var(--danger);
+  border-color: #d43f3a;
+}
+
+.ls-btn-danger:hover {
+  background: #d43f3a;
+}
+
+.ls-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.ls-info-row:last-child {
+  border-bottom: none;
+}
+
+.ls-info-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ls-info-value {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.ls-action-item {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.15s ease;
+  margin-bottom: 0.5rem;
+}
+
+.ls-action-item:last-child {
+  margin-bottom: 0;
+}
+
+.ls-action-item:hover {
+  background: var(--bg-hover);
+  border-color: #444;
+}
+
+.ls-action-info {
+  flex: 1;
+}
+
+.ls-action-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.ls-action-details {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.ls-action-details span {
+  margin-right: 1rem;
+}
+
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
 }
