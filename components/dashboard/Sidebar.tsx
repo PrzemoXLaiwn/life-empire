@@ -121,11 +121,11 @@ export function Sidebar() {
     {
       title: 'WORLD',
       items: [
-    { icon: Car, label: 'Travel', href: '/dashboard/travel' },        // Miasta w kraju
-    { icon: Plane, label: 'Airport', href: '/dashboard/airport' },    // Inne kraje
-    { icon: Users, label: 'Gang', href: '/dashboard/gang' },
-    { icon: UserPlus, label: 'Faction', href: '/dashboard/faction' },
-    { icon: MessageSquare, label: 'Forums', href: '/dashboard/forums' },
+        { icon: Car, label: 'Travel', href: '/dashboard/travel' },
+        { icon: Plane, label: 'Airport', href: '/dashboard/airport' },
+        { icon: Users, label: 'Gang', href: '/dashboard/gang' },
+        { icon: UserPlus, label: 'Faction', href: '/dashboard/faction' },
+        { icon: MessageSquare, label: 'Forums', href: '/dashboard/forums' },
       ]
     },
     {
@@ -151,7 +151,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-[#333]">
         <h1 className="text-xl font-bold text-[#fff] uppercase tracking-wider">
-          LIFE SYNDICATE
+          LIFE EMPIRE
         </h1>
         <p className="text-[10px] text-[#888] uppercase tracking-wider mt-1">
           Build Your Empire

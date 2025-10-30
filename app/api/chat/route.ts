@@ -2,17 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
-// Schema dla chat - dodaj do prisma.schema
-// model ChatMessage {
-//   id        String   @id @default(cuid())
-//   userId    String
-//   username  String
-//   message   String
-//   createdAt DateTime @default(now())
-//   @@index([createdAt])
-//   @@map("chat_messages")
-// }
-
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -33,13 +22,22 @@ export async function POST(request: Request) {
     }
 
     const username = user.user_metadata?.username || user.email?.split('@')[0] || 'Player'
+    
+    // Get character - POBIERZ CAŁY OBIEKT
+    const character = await prisma.character.findUnique({
+      where: { userId: user.id }
+    })
+
+    // CAST DO any aby TypeScript nie narzekał
+    const avatarValue = (character as any)?.avatar || 'crown'
 
     const chatMessage = await prisma.chatMessage.create({
       data: {
         userId: user.id,
         username,
+        avatar: avatarValue,
         message: message.trim()
-      }
+      } as any
     })
 
     return NextResponse.json({ message: chatMessage })

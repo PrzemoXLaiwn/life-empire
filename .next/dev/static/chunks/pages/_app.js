@@ -1,0 +1,13 @@
+__turbopack_load_page_chunks__("/_app", [
+  "static/chunks/f9ab2_next_dist_compiled_34ebf8b1._.js",
+  "static/chunks/f9ab2_next_dist_shared_lib_9fcfaa74._.js",
+  "static/chunks/f9ab2_next_dist_client_1a81b573._.js",
+  "static/chunks/f9ab2_next_dist_96828eb5._.js",
+  "static/chunks/f9ab2_next_app_d6fab2d9.js",
+  "static/chunks/[next]_entry_page-loader_ts_b6c29aba._.js",
+  "static/chunks/1cf7a_react-dom_0218653b._.js",
+  "static/chunks/5e221__pnpm_39ea3cdb._.js",
+  "static/chunks/[root-of-the-server]__62bb224f._.js",
+  "static/chunks/Desktop_life-crime-game_pages__app_2da965e7._.js",
+  "static/chunks/turbopack-Desktop_life-crime-game_pages__app_2ff49004._.js"
+])

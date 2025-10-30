@@ -1,0 +1,11 @@
+var R=require("../../../chunks/[turbopack]_runtime.js")("server/app/api/character/route.js")
+R.c("server/chunks/0c672_@supabase_node-fetch_lib_index_2ce145cc.js")
+R.c("server/chunks/f9ab2_next_598e245c._.js")
+R.c("server/chunks/d1ffd_tr46_bbd6eac3._.js")
+R.c("server/chunks/3917e_@supabase_storage-js_dist_module_6c2af3f6._.js")
+R.c("server/chunks/ff157_@supabase_auth-js_dist_module_6dc6a235._.js")
+R.c("server/chunks/5e221__pnpm_f20b0fd0._.js")
+R.c("server/chunks/[root-of-the-server]__f98c6874._.js")
+R.c("server/chunks/3d860_life-crime-game__next-internal_server_app_api_character_route_actions_598dec46.js")
+R.m("[project]/Desktop/life-crime-game/node_modules/.pnpm/next@16.0.0_@babel+core@7.2_7f620302781efc33b3cd1d7b899d45d5/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/Desktop/life-crime-game/app/api/character/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)")
+module.exports=R.m("[project]/Desktop/life-crime-game/node_modules/.pnpm/next@16.0.0_@babel+core@7.2_7f620302781efc33b3cd1d7b899d45d5/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/Desktop/life-crime-game/app/api/character/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)").exports

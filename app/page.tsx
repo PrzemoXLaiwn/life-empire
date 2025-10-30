@@ -38,7 +38,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#fff] uppercase tracking-wider">
-              LIFE SYNDICATE
+              LIFE EMPIRE
             </h1>
             <p className="text-[10px] text-[#888] uppercase tracking-wider">
               Build Your Criminal Empire
@@ -63,7 +63,7 @@ export default function LandingPage() {
       <section className="border-b border-[#333]">
         <div className="max-w-7xl mx-auto px-6 py-20 text-center">
           <h2 className="text-4xl font-bold text-[#fff] mb-4 uppercase tracking-wider">
-            Welcome to Life Syndicate
+            Welcome to Life Empire
           </h2>
           <p className="text-lg text-[#888] mb-8 max-w-2xl mx-auto">
             A text-based online RPG set in a dark, gritty underworld. Build your character, commit crimes, 
@@ -146,7 +146,7 @@ export default function LandingPage() {
       <footer className="py-8">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <p className="text-xs text-[#666]">
-            © 2025 Life Syndicate. All rights reserved.
+            © 2025 Life Empire. All rights reserved.
           </p>
         </div>
       </footer>

@@ -1,88 +1,90 @@
 'use client'
 
+import { useState } from 'react'
+import { Briefcase, GraduationCap, Dumbbell, Target } from 'lucide-react'
+
 export function QuickActions() {
+  const [isWorking, setIsWorking] = useState(false)
+
   const actions = [
     {
       id: 'work',
-      title: '💼 Work',
+      icon: Briefcase,
+      title: 'Work',
       subtitle: 'Janitor • $50/hr',
-      energyCost: 20
+      energyCost: 20,
+      color: 'success'
     },
     {
       id: 'study',
-      title: '📚 Study',
-      subtitle: 'Math 101',
-      energyCost: 10
+      icon: GraduationCap,
+      title: 'Study',
+      subtitle: 'Math 101 • +5 INT',
+      energyCost: 10,
+      color: 'info'
     },
     {
       id: 'train',
-      title: '💪 Train',
-      subtitle: 'Gym • Strength +1',
-      energyCost: 15
+      icon: Dumbbell,
+      title: 'Train',
+      subtitle: 'Gym • +2 STR',
+      energyCost: 15,
+      color: 'warning'
+    },
+    {
+      id: 'crime',
+      icon: Target,
+      title: 'Quick Crime',
+      subtitle: 'Pickpocket • $50-200',
+      energyCost: 10,
+      color: 'danger'
     }
   ]
 
-  const crimes = [
-    { name: 'Pickpocket', energy: 10, reward: '$50-200', success: 95 },
-    { name: 'Shoplifting', energy: 15, reward: '$200-500', success: 90 },
-    { name: 'Car Theft', energy: 25, reward: '$1K-5K', success: 75 },
-    { name: 'House Robbery', energy: 30, reward: '$5K-20K', success: 60 },
-    { name: 'Bank Heist', energy: 50, reward: '$50K-200K', success: 40 }
-  ]
+  const handleAction = async (actionId: string) => {
+    setIsWorking(true)
+    // TODO: API call
+    setTimeout(() => {
+      setIsWorking(false)
+    }, 1000)
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Quick Actions */}
-      <div className="ls-section">
-        <div className="ls-section-header">Quick Actions</div>
-        <div className="ls-section-content space-y-2">
-          {actions.map((action) => (
-            <div key={action.id} className="ls-action-item">
-              <div className="ls-action-info">
-                <div className="ls-action-title">{action.title}</div>
-                <div className="ls-action-details">
-                  <span>{action.subtitle}</span>
-                  <span className="text-warning">-{action.energyCost} Energy</span>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {actions.map((action) => {
+        const Icon = action.icon
+        return (
+          <button
+            key={action.id}
+            onClick={() => handleAction(action.id)}
+            disabled={isWorking}
+            className="group relative overflow-hidden bg-[#1a1a1a] border border-[#333] hover:border-[#5cb85c] transition-all p-4 rounded text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {/* Icon */}
+            <div className="flex items-start justify-between mb-3">
+              <div className={`p-2 rounded bg-${action.color}/10 border border-${action.color}/20`}>
+                <Icon className={`w-5 h-5 text-${action.color} group-hover:scale-110 transition-transform`} />
               </div>
-              <button className="ls-btn ls-btn-primary">START</button>
+              <span className="text-[10px] text-warning font-bold px-2 py-1 bg-[#2a2a2a] rounded">
+                -{action.energyCost} ⚡
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Crimes */}
-      <div className="ls-section">
-        <div className="ls-section-header">Commit Crime</div>
-        <div className="ls-section-content">
-          <table className="ls-table">
-            <thead>
-              <tr>
-                <th>Crime</th>
-                <th>Energy</th>
-                <th>Reward</th>
-                <th>Success</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {crimes.map((crime, index) => (
-                <tr key={index}>
-                  <td>{crime.name}</td>
-                  <td className="text-warning">-{crime.energy}</td>
-                  <td className="text-success">{crime.reward}</td>
-                  <td className={crime.success >= 70 ? 'text-success' : 'text-warning'}>
-                    {crime.success}%
-                  </td>
-                  <td>
-                    <button className="ls-btn ls-btn-danger">GO</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            {/* Info */}
+            <div>
+              <h3 className="text-sm font-bold text-[#fff] mb-1 group-hover:text-[#5cb85c] transition-colors">
+                {action.title}
+              </h3>
+              <p className="text-xs text-[#888]">
+                {action.subtitle}
+              </p>
+            </div>
+
+            {/* Hover Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#5cb85c]/0 to-[#5cb85c]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          </button>
+        )
+      })}
     </div>
   )
 }

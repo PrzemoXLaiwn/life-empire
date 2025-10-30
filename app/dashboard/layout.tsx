@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useCharacterStore } from '@/lib/character-store'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { TopBar } from '@/components/dashboard/TopBar'
+import { FloatingChat } from '@/components/dashboard/FloatingChat'
+import { FloatingFeed } from '@/components/dashboard/FloatingFeed'
 import type { User } from '@supabase/supabase-js'
 
 export default function DashboardLayout({
@@ -100,10 +102,10 @@ export default function DashboardLayout({
 
   if (isLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-[#0f0f0f]">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent mb-4"></div>
-          <p className="text-slate-400">Loading your empire...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-solid border-[#5cb85c] border-r-transparent mb-4"></div>
+          <p className="text-[#888] text-xs uppercase tracking-wider">Loading your empire...</p>
         </div>
       </div>
     )
@@ -111,24 +113,36 @@ export default function DashboardLayout({
 
   if (!character) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-[#0f0f0f]">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent mb-4"></div>
-          <p className="text-slate-400">Setting up your character...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-solid border-[#5cb85c] border-r-transparent mb-4"></div>
+          <p className="text-[#888] text-xs uppercase tracking-wider">Setting up your character...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen bg-slate-950">
-      <Sidebar />
+    <div className="flex h-screen bg-[#0f0f0f] overflow-hidden">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block desktop-sidebar">
+        <Sidebar />
+      </aside>
+
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Bar */}
         <TopBar />
-        <main className="flex-1 overflow-y-auto bg-slate-900 p-6">
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f0f0f]">
           {children}
         </main>
       </div>
+
+      {/* Floating Widgets */}
+      <FloatingChat />
+      <FloatingFeed />
     </div>
   )
 }

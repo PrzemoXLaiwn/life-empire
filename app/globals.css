@@ -281,3 +281,97 @@ body {
 .fade-in {
   animation: fadeIn 0.2s ease-out;
 }
+
+/* ===== MOBILE OPTIMIZATION ===== */
+
+/* Mobile topbar - stack stats */
+@media (max-width: 768px) {
+  .mobile-topbar-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .mobile-stat {
+    font-size: 10px;
+  }
+}
+
+/* Sidebar - hide on mobile, show as bottom nav */
+@media (max-width: 1024px) {
+  .desktop-sidebar {
+    display: none;
+  }
+  
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0f0f0f;
+    border-top: 1px solid #333;
+    padding: 0.5rem;
+    justify-content: space-around;
+    z-index: 50;
+  }
+  
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    color: #888;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+  
+  .mobile-nav-item.active {
+    color: #5cb85c;
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+/* Responsive grids */
+@media (max-width: 640px) {
+  .responsive-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .responsive-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .responsive-grid-8 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 768px) {
+  .ls-btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  
+  .ls-action-item {
+    padding: 1rem;
+  }
+}
+
+/* Mobile padding adjustments */
+@media (max-width: 640px) {
+  body {
+    padding-bottom: 70px; /* Space for bottom nav */
+  }
+  
+  .ls-section-content {
+    padding: 1rem;
+  }
+}
