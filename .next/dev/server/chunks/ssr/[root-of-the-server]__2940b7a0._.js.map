@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 22, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Montech.DESKTOP-HFD37TP/Desktop/life-crime-game/app/dashboard/crime/page.tsx"],"sourcesContent":["export default function CrimePage() {\r\n  return (\r\n    <div className=\"bg-bg-card rounded-lg border border-border-light p-6\">\r\n      <h1 className=\"font-display text-2xl font-bold text-text-primary mb-4\">\r\n        🔫 CRIMES\r\n      </h1>\r\n      <p className=\"text-text-secondary\">This page shows your crime statistics and history.</p>\r\n    </div>\r\n  )\r\n}"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,iYAAC;QAAI,WAAU;;0BACb,iYAAC;gBAAG,WAAU;0BAAyD;;;;;;0BAGvE,iYAAC;gBAAE,WAAU;0BAAsB;;;;;;;;;;;;AAGzC","debugId":null}}]
-}
