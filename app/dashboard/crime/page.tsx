@@ -1,10 +1,14 @@
-export default function CrimePage() {
+export default function PlaceholderPage() {
   return (
-    <div className="bg-bg-card rounded-lg border border-border-light p-6">
-      <h1 className="font-display text-2xl font-bold text-text-primary mb-4">
-        🔫 CRIMES
-      </h1>
-      <p className="text-text-secondary">This page shows your crime statistics and history.</p>
+    <div className="space-y-4 max-w-7xl mx-auto fade-in">
+      <h1 className="text-2xl font-bold text-[#fff] mb-6">Coming Soon</h1>
+      <div className="ls-section">
+        <div className="ls-section-content">
+          <p className="text-[#888] text-sm text-center py-8">
+            This page is under construction...
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
