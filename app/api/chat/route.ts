@@ -1,14 +1,48 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import DOMPurify from 'isomorphic-dompurify'
+
+// ✅ Rate limiting store (prosty in-memory)
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
+
+// ✅ Funkcja sprawdzająca rate limit
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now()
+  const userLimit = rateLimitStore.get(userId)
+
+  // Jeśli nie ma wpisu lub minęła minuta - resetuj
+  if (!userLimit || now > userLimit.resetAt) {
+    rateLimitStore.set(userId, { count: 1, resetAt: now + 60000 }) // 1 minuta
+    return true
+  }
+
+  // Sprawdź czy nie przekroczył limitu (10 wiadomości/minutę)
+  if (userLimit.count >= 10) {
+    return false
+  }
+
+  // Zwiększ licznik
+  userLimit.count++
+  return true
+}
 
 export async function POST(request: Request) {
   try {
+    // ✅ Prawidłowe uwierzytelnianie
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // ✅ Rate limiting
+    if (!checkRateLimit(user.id)) {
+      return NextResponse.json(
+        { error: 'Too many messages. Please wait a minute.' },
+        { status: 429 }
+      )
     }
 
     const { message } = await request.json()
@@ -21,23 +55,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Message too long (max 200 chars)' }, { status: 400 })
     }
 
-    const username = user.user_metadata?.username || user.email?.split('@')[0] || 'Player'
-    
-    // Get character - POBIERZ CAŁY OBIEKT
-    const character = await prisma.character.findUnique({
-      where: { userId: user.id }
+    // ✅ SANITYZACJA - usuń HTML/JavaScript!
+    const sanitizedMessage = DOMPurify.sanitize(message.trim(), {
+      ALLOWED_TAGS: [], // Żadne tagi HTML!
+      ALLOWED_ATTR: []
     })
 
-    // CAST DO any aby TypeScript nie narzekał
-    const avatarValue = (character as any)?.avatar || 'crown'
+    const username = user.user_metadata?.username || user.email?.split('@')[0] || 'Player'
+    
+    // Get character avatar
+    const character = await prisma.character.findUnique({
+      where: { userId: user.id },
+      select: { avatar: true } // ✅ Tylko avatar, nie cały obiekt
+    })
 
     const chatMessage = await prisma.chatMessage.create({
       data: {
         userId: user.id,
         username,
-        avatar: avatarValue,
-        message: message.trim()
-      } as any
+        avatar: character?.avatar || 'crown',
+        message: sanitizedMessage // ✅ Oczyszczona wiadomość!
+      }
     })
 
     return NextResponse.json({ message: chatMessage })

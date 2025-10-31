@@ -52,11 +52,15 @@ const CRIMES = {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id')
-    
-    if (!userId) {
+    // ✅ NAPRAWIONE: Prawidłowe uwierzytelnianie przez Supabase!
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const userId = user.id // ✅ BEZPIECZNE - nie można podrobić!
 
     const { crimeId } = await request.json()
     const crime = CRIMES[crimeId as keyof typeof CRIMES]
@@ -105,9 +109,7 @@ export async function POST(request: NextRequest) {
     const isSuccess = random <= successRate
 
     // Get username for events
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Player'
+    const username = user.user_metadata?.username || user.email?.split('@')[0] || 'Player'
 
     let updatedCharacter
     let result

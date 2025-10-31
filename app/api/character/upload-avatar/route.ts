@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
+const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp'])
+const MAX_SIZE = 2 * 1024 * 1024 // 2MB
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -18,54 +22,72 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Walidacja
-    const maxSize = 2 * 1024 * 1024 // 2MB
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: 'File too large (max 2MB)' }, { status: 400 })
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: 'File too large. Maximum 2MB allowed' },
+        { status: 400 }
+      )
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Only JPG, PNG, and WEBP allowed' },
+        { status: 400 }
+      )
     }
 
-    // Upload do Supabase Storage
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`
-    const filePath = `avatars/${fileName}`
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || ''
+    if (!ALLOWED_EXTENSIONS.has(fileExt)) {
+      return NextResponse.json(
+        { error: 'Invalid file extension' },
+        { status: 400 }
+      )
+    }
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const arrayBuffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
+
+    const fileName = `${Date.now()}.${fileExt}`
+    const filePath = `${user.id}/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, file, {
+      .upload(filePath, uint8Array, {
         contentType: file.type,
-        upsert: true
+        upsert: false,
+        cacheControl: '3600'
       })
 
     if (uploadError) {
       console.error('Upload error:', uploadError)
-      return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to upload file' },
+        { status: 500 }
+      )
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: urlData } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath)
 
-    // Update character
     await prisma.character.update({
       where: { userId: user.id },
-      data: { 
+      data: {
         avatar: 'custom',
-        customAvatar: publicUrl 
-      } as any
+        customAvatar: urlData.publicUrl
+      }
     })
 
-    return NextResponse.json({ 
-      success: true, 
-      url: publicUrl 
+    return NextResponse.json({
+      success: true,
+      url: urlData.publicUrl,
+      message: 'Avatar uploaded successfully!'
     })
   } catch (error) {
-    console.error('Upload avatar error:', error)
-    return NextResponse.json({ error: 'Failed to upload avatar' }, { status: 500 })
+    console.error('Upload error:', error)
+    return NextResponse.json(
+      { error: 'Upload failed' },
+      { status: 500 }
+    )
   }
 }

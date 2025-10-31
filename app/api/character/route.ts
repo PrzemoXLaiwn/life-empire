@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // ✅ Prawidłowe uwierzytelnianie
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -106,11 +107,36 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { ...updates } = body
+
+    // ✅ WHITELIST - tylko te pola można zmieniać przez frontend!
+    const allowedUpdates: any = {}
+
+    // Dozwolone pola (bezpieczne do edycji przez użytkownika)
+    if (body.hasOwnProperty('cityId')) allowedUpdates.cityId = body.cityId
+    if (body.hasOwnProperty('avatar')) allowedUpdates.avatar = body.avatar
+    if (body.hasOwnProperty('customAvatar')) allowedUpdates.customAvatar = body.customAvatar
+    
+    // ❌ NIE POZWALAJ na zmianę tych pól (tylko serwer może je zmieniać):
+    // - money
+    // - level
+    // - xp
+    // - health
+    // - energy
+    // - crimesCommitted
+    // - criminalReputation
+    // - strength, defense, speed, dexterity
+
+    // Jeśli nie ma żadnych dozwolonych zmian
+    if (Object.keys(allowedUpdates).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update' },
+        { status: 400 }
+      )
+    }
 
     const character = await prisma.character.update({
       where: { userId: user.id },
-      data: updates,
+      data: allowedUpdates,
       include: { city: true }
     })
 

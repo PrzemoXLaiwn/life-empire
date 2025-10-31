@@ -62,6 +62,7 @@ model Character {
   hasDriverLicense   Boolean        @default(false)
   hasPlane           Boolean        @default(false)
   avatar             String?        @default("crown")
+  customAvatar       String?
   city               City?          @relation(fields: [cityId], references: [id])
   crimeHistory       CrimeHistory[]
 
