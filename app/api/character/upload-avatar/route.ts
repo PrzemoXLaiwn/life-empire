@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
-const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
-const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp'])
+const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif'])
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 
 export async function POST(request: Request) {
@@ -42,6 +42,27 @@ export async function POST(request: Request) {
         { error: 'Invalid file extension' },
         { status: 400 }
       )
+    }
+
+    // Get current character to check for old avatar
+    const currentCharacter = await prisma.character.findUnique({
+      where: { userId: user.id },
+      select: { customAvatar: true }
+    })
+
+    // Delete old custom avatar if exists
+    if (currentCharacter?.customAvatar) {
+      try {
+        // Extract file path from URL
+        const oldUrl = new URL(currentCharacter.customAvatar)
+        const oldPath = oldUrl.pathname.split('/avatars/').pop()
+        if (oldPath) {
+          await supabase.storage.from('avatars').remove([oldPath])
+        }
+      } catch (err) {
+        console.warn('Failed to delete old avatar:', err)
+        // Continue anyway - not critical
+      }
     }
 
     const arrayBuffer = await file.arrayBuffer()

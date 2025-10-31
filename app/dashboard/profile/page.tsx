@@ -26,20 +26,33 @@ export default function ProfilePage() {
   const [selectedAvatar, setSelectedAvatar] = useState<string>('crown')
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
   useEffect(() => {
+    let mounted = true
+
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user?.user_metadata?.username) {
-        setUsername(user.user_metadata.username)
-      } else {
-        setUsername(user?.email?.split('@')[0] || 'Player')
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (mounted) {
+          if (user?.user_metadata?.username) {
+            setUsername(user.user_metadata.username)
+          } else {
+            setUsername(user?.email?.split('@')[0] || 'Player')
+          }
+          setEmail(user?.email || '')
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error)
       }
-      setEmail(user?.email || '')
     }
     getUser()
+
+    return () => {
+      mounted = false
+    }
   }, [supabase])
 
   useEffect(() => {
@@ -48,10 +61,20 @@ export default function ProfilePage() {
     }
   }, [character])
 
+  // Auto-hide messages after 5 seconds
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [message])
+
   const saveAvatar = async () => {
     if (!character) return
 
     setIsSaving(true)
+    setMessage(null)
+
     try {
       const response = await fetch('/api/character/avatar', {
         method: 'PUT',
@@ -61,11 +84,14 @@ export default function ProfilePage() {
 
       if (response.ok) {
         await fetchCharacter()
-        alert('Avatar updated successfully!')
+        setMessage({ type: 'success', text: 'Avatar updated successfully!' })
+      } else {
+        const error = await response.json()
+        setMessage({ type: 'error', text: error.error || 'Failed to save avatar' })
       }
     } catch (error) {
       console.error('Failed to save avatar:', error)
-      alert('Failed to save avatar')
+      setMessage({ type: 'error', text: 'Failed to save avatar. Please try again.' })
     } finally {
       setIsSaving(false)
     }
@@ -75,14 +101,16 @@ export default function ProfilePage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Walidacja
+    setMessage(null)
+
+    // Validation
     if (file.size > 2 * 1024 * 1024) {
-      alert('File too large! Max 2MB')
+      setMessage({ type: 'error', text: 'File too large! Maximum size is 2MB' })
       return
     }
 
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-      alert('Invalid file type! Use JPG, PNG, WEBP or GIF')
+      setMessage({ type: 'error', text: 'Invalid file type! Use JPG, PNG, WEBP or GIF' })
       return
     }
 
@@ -99,14 +127,18 @@ export default function ProfilePage() {
       if (response.ok) {
         await fetchCharacter()
         setSelectedAvatar('custom')
-        alert('Custom avatar uploaded!')
+        setMessage({ type: 'success', text: 'Custom avatar uploaded successfully!' })
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
       } else {
         const error = await response.json()
-        alert(error.error || 'Upload failed')
+        setMessage({ type: 'error', text: error.error || 'Upload failed' })
       }
     } catch (error) {
       console.error('Failed to upload:', error)
-      alert('Upload failed')
+      setMessage({ type: 'error', text: 'Upload failed. Please try again.' })
     } finally {
       setIsUploading(false)
     }
@@ -126,6 +158,17 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto fade-in">
       <h1 className="text-2xl font-bold text-[#fff] mb-6">Profile</h1>
+
+      {/* Message Display */}
+      {message && (
+        <div className={`ls-section ${message.type === 'success' ? 'border-[#5cb85c]' : 'border-[#d9534f]'}`}>
+          <div className="ls-section-content">
+            <p className={`text-sm ${message.type === 'success' ? 'text-[#5cb85c]' : 'text-[#d9534f]'}`}>
+              {message.text}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Avatar Selection */}
       <div className="ls-section">

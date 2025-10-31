@@ -43,8 +43,44 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    if (!email || !password || !confirmPassword || !username) {
+    // Trim inputs
+    const trimmedEmail = email.trim()
+    const trimmedUsername = username.trim()
+
+    // Validation
+    if (!trimmedEmail || !password || !confirmPassword || !trimmedUsername) {
       setError('All fields are required')
+      return
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    // Username validation
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 20) {
+      setError('Username must be between 3 and 20 characters')
+      return
+    }
+
+    // Username format validation (alphanumeric and underscore only)
+    const usernameRegex = /^[a-zA-Z0-9_]+$/
+    if (!usernameRegex.test(trimmedUsername)) {
+      setError('Username can only contain letters, numbers, and underscores')
+      return
+    }
+
+    // Password validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
+    if (password.length > 72) {
+      setError('Password must be less than 72 characters')
       return
     }
 
@@ -53,15 +89,9 @@ export default function RegisterPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-
-    if (username.length < 3) {
-      setError('Username must be at least 3 characters')
-      return
-    }
+    // Update state with trimmed values
+    setEmail(trimmedEmail)
+    setUsername(trimmedUsername)
 
     setStep(2)
   }
@@ -111,29 +141,77 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError('')
 
+    let userId: string | null = null
+
     try {
       // 1. Create account
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
-        options: { data: { username } }
+        options: {
+          data: { username: username.trim() },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
       })
 
-      if (authError) throw authError
-      if (!authData.user) throw new Error('Failed to create account')
+      if (authError) {
+        // Better error messages
+        if (authError.message.includes('already registered')) {
+          throw new Error('This email is already registered. Please login instead.')
+        }
+        throw new Error(authError.message)
+      }
 
-      // 2. Create character with city
-      const charResponse = await fetch('/api/character', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cityId: selectedCity })
-      })
+      if (!authData.user) {
+        throw new Error('Failed to create account. Please try again.')
+      }
 
-      if (!charResponse.ok) throw new Error('Failed to create character')
+      userId = authData.user.id
 
+      // 2. Create character with city - with retry logic
+      let retries = 3
+      let charCreated = false
+      let lastError: Error | null = null
+
+      while (retries > 0 && !charCreated) {
+        try {
+          const charResponse = await fetch('/api/character', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cityId: selectedCity })
+          })
+
+          if (!charResponse.ok) {
+            const errorData = await charResponse.json()
+            throw new Error(errorData.error || 'Failed to create character')
+          }
+
+          charCreated = true
+        } catch (err) {
+          lastError = err as Error
+          retries--
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1s before retry
+          }
+        }
+      }
+
+      if (!charCreated) {
+        throw new Error(`Failed to create character after multiple attempts: ${lastError?.message}`)
+      }
+
+      // Success!
       router.push('/dashboard')
+      router.refresh()
     } catch (error: any) {
-      setError(error.message || 'Failed to create account')
+      console.error('Registration error:', error)
+
+      // If character creation failed but account was created, inform the user
+      if (userId && error.message.includes('character')) {
+        setError('Account created but character setup failed. Please contact support or try logging in.')
+      } else {
+        setError(error.message || 'Failed to create account. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

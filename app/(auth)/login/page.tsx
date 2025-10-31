@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -11,27 +11,72 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  // Get redirect parameter from URL
+  const redirectTo = searchParams.get('redirect') || '/dashboard'
+
+  // Check for callback errors
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      if (errorParam === 'no_code' || errorParam === 'no_session') {
+        setError('Authentication failed. Please try logging in again.')
+      } else if (errorParam === 'unexpected') {
+        setError('An unexpected error occurred. Please try again.')
+      } else {
+        setError(decodeURIComponent(errorParam))
+      }
+    }
+  }, [searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      setError(error.message)
+    // Basic validation
+    if (!email.trim()) {
+      setError('Email is required')
       setIsLoading(false)
       return
     }
 
-    if (data.user) {
-      router.push('/dashboard')
-      router.refresh()
+    if (!password.trim()) {
+      setError('Password is required')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+
+      if (authError) {
+        // Better error messages
+        if (authError.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please try again.')
+        } else if (authError.message.includes('Email not confirmed')) {
+          setError('Please verify your email address before logging in.')
+        } else {
+          setError(authError.message)
+        }
+        setIsLoading(false)
+        return
+      }
+
+      if (data.user) {
+        // Successfully logged in
+        router.push(redirectTo)
+        router.refresh()
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('An unexpected error occurred. Please try again.')
+      setIsLoading(false)
     }
   }
 

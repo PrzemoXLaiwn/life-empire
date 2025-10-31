@@ -42,7 +42,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { cityId } = body
 
-    // Check if exists
+    // Validate cityId
+    if (!cityId) {
+      return NextResponse.json(
+        { error: 'City ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify city exists
+    const cityExists = await prisma.city.findUnique({
+      where: { id: cityId }
+    })
+
+    if (!cityExists) {
+      return NextResponse.json(
+        { error: 'Invalid city ID' },
+        { status: 400 }
+      )
+    }
+
+    // Check if character already exists
     const existing = await prisma.character.findUnique({
       where: { userId: user.id },
       include: { city: true }
@@ -52,7 +72,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ character: existing })
     }
 
-    // Create with city
+    // Create character with city
     const character = await prisma.character.create({
       data: {
         userId: user.id,
@@ -82,15 +102,33 @@ export async function POST(request: NextRequest) {
         lastEnergyRegen: new Date(),
         lastHealthRegen: new Date(),
         lastAgeIncrement: new Date(),
+        avatar: 'crown',
       },
       include: { city: true }
     })
 
+    console.log('✅ Character created successfully:', character.id)
     return NextResponse.json({ character }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ POST /api/character error:', error)
+
+    // Better error messages
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Character already exists for this user' },
+        { status: 409 }
+      )
+    }
+
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Invalid city reference' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create character' },
+      { error: 'Failed to create character. Please try again.' },
       { status: 500 }
     )
   }
