@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import DOMPurify from 'isomorphic-dompurify'
+
+// ✅ Prosta funkcja sanityzacji (BEZ zewnętrznych bibliotek!)
+function sanitizeMessage(text: string): string {
+  return text
+    .replace(/</g, '&lt;')   // < → &lt;
+    .replace(/>/g, '&gt;')   // > → &gt;
+    .replace(/"/g, '&quot;') // " → &quot;
+    .replace(/'/g, '&#x27;') // ' → &#x27;
+    .replace(/\//g, '&#x2F;') // / → &#x2F;
+    .trim()
+}
 
 // ✅ Rate limiting store (prosty in-memory)
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
@@ -56,10 +66,7 @@ export async function POST(request: Request) {
     }
 
     // ✅ SANITYZACJA - usuń HTML/JavaScript!
-    const sanitizedMessage = DOMPurify.sanitize(message.trim(), {
-      ALLOWED_TAGS: [], // Żadne tagi HTML!
-      ALLOWED_ATTR: []
-    })
+    const sanitizedMessage = sanitizeMessage(message)
 
     const username = user.user_metadata?.username || user.email?.split('@')[0] || 'Player'
     
