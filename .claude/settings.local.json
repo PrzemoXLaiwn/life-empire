@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(dir:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"YES - Proceed with database reset. I confirm data loss is acceptable.\" npx prisma db push --force-reset --accept-data-loss)",
+      "Bash(npm run db:seed:*)",
+      "Bash(npm run dev)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(nul)",
+      "Bash(copy middleware.ts proxy.ts)",
+      "Bash(taskkill:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

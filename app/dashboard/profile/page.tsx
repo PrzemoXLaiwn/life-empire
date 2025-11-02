@@ -304,41 +304,16 @@ export default function ProfilePage() {
                 <span className="ls-info-value">{character.level}</span>
               </div>
               <div className="ls-info-row">
-                <span className="ls-info-label">Age:</span>
-                <span className="ls-info-value">{character.age} years</span>
+                <span className="ls-info-label">Experience:</span>
+                <span className="ls-info-value">{character.experience}</span>
               </div>
               <div className="ls-info-row">
                 <span className="ls-info-label">Reputation:</span>
                 <span className="ls-info-value">{character.reputation}</span>
               </div>
               <div className="ls-info-row">
-                <span className="ls-info-label">Rank:</span>
-                <span className="ls-info-value">{character.rank}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Combat Stats */}
-        <div className="ls-section">
-          <div className="ls-section-header">Combat Stats</div>
-          <div className="ls-section-content">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="ls-info-row">
                 <span className="ls-info-label">Strength:</span>
                 <span className="ls-info-value">{character.strength}</span>
-              </div>
-              <div className="ls-info-row">
-                <span className="ls-info-label">Defense:</span>
-                <span className="ls-info-value">{character.defense}</span>
-              </div>
-              <div className="ls-info-row">
-                <span className="ls-info-label">Speed:</span>
-                <span className="ls-info-value">{character.speed}</span>
-              </div>
-              <div className="ls-info-row">
-                <span className="ls-info-label">Dexterity:</span>
-                <span className="ls-info-value">{character.dexterity}</span>
               </div>
             </div>
           </div>

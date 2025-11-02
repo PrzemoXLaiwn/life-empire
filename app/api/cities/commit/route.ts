@@ -86,9 +86,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    if (character.jailTime > 0) {
-      return NextResponse.json({ 
-        error: `You are in jail for ${character.jailTime} more minutes!` 
+    if (character.inJail && character.jailReleaseAt && character.jailReleaseAt > new Date()) {
+      const minutesLeft = Math.ceil((character.jailReleaseAt.getTime() - Date.now()) / 60000)
+      return NextResponse.json({
+        error: `You are in jail for ${minutesLeft} more minutes!`
       }, { status: 400 })
     }
 
@@ -98,10 +99,8 @@ export async function POST(request: NextRequest) {
     let maxReward = crime.maxReward
 
     if (character.city) {
-      successRate = Math.min(99, successRate + character.city.crimeBonus)
-      const incomeMultiplier = 1 + (character.city.incomeBonus / 100)
-      minReward = Math.floor(minReward * incomeMultiplier)
-      maxReward = Math.floor(maxReward * incomeMultiplier)
+      const crimeBonus = Number(character.city.crimeBonus)
+      successRate = Math.min(99, successRate + crimeBonus)
     }
 
     // Calculate success
@@ -120,34 +119,34 @@ export async function POST(request: NextRequest) {
         Math.random() * (maxReward - minReward + 1) + minReward
       )
 
-      const newXP = character.xp + crime.xpReward
+      const newXP = character.experience + crime.xpReward
       const levelUp = newXP >= character.xpNeeded
 
       updatedCharacter = await prisma.character.update({
         where: { id: character.id },
         data: {
-          money: character.money + moneyGained,
+          dirtyCash: character.dirtyCash + moneyGained,
           energy: character.energy - crime.energyCost,
-          xp: levelUp ? newXP - character.xpNeeded : newXP,
+          experience: levelUp ? newXP - character.xpNeeded : newXP,
           level: levelUp ? character.level + 1 : character.level,
           xpNeeded: levelUp ? Math.floor(character.xpNeeded * 1.5) : character.xpNeeded,
           maxEnergy: levelUp ? character.maxEnergy + 5 : character.maxEnergy,
           maxHealth: levelUp ? character.maxHealth + 10 : character.maxHealth,
-          crimesCommitted: character.crimesCommitted + 1,
-          criminalReputation: character.criminalReputation + crime.xpReward,
+          reputation: character.reputation + crime.xpReward,
         },
         include: { city: true }
       })
 
-      await prisma.crimeHistory.create({
-        data: {
-          character: { connect: { id: character.id } },
-          crimeType: crimeId,
-          success: true,
-          moneyGained,
-          xpGained: crime.xpReward,
-        }
-      })
+      // TODO: Create CrimeHistory record once Crime records are seeded
+      // await prisma.crimeHistory.create({
+      //   data: {
+      //     character: { connect: { id: character.id } },
+      //     crime: { connect: { id: crimeId } },
+      //     success: true,
+      //     reward: moneyGained,
+      //     experienceGained: crime.xpReward,
+      //   }
+      // })
 
       await prisma.gameEvent.create({
         data: {
@@ -160,30 +159,33 @@ export async function POST(request: NextRequest) {
 
       result = {
         success: true,
-        message: `Success! You stole $${moneyGained.toLocaleString()} and gained ${crime.xpReward} XP!${character.city ? ` (${character.city.incomeBonus > 0 ? `+${character.city.incomeBonus}% ` : ''}City Bonus Applied)` : ''}`,
+        message: `Success! You stole $${moneyGained.toLocaleString()} (dirty cash) and gained ${crime.xpReward} XP!`,
         moneyGained,
         xpGained: crime.xpReward,
         leveledUp: levelUp,
       }
     } else {
-      // FAILED
+      // FAILED - Set jail release time
+      const jailReleaseAt = new Date(Date.now() + crime.jailTimeOnFail * 60000)
+
       updatedCharacter = await prisma.character.update({
         where: { id: character.id },
         data: {
           energy: character.energy - crime.energyCost,
-          jailTime: crime.jailTimeOnFail,
+          inJail: true,
+          jailReleaseAt: jailReleaseAt,
         },
         include: { city: true }
       })
 
-      await prisma.crimeHistory.create({
-        data: {
-          character: { connect: { id: character.id } },
-          crimeType: crimeId,
-          success: false,
-          jailTime: crime.jailTimeOnFail,
-        }
-      })
+      // TODO: Create CrimeHistory record once Crime records are seeded
+      // await prisma.crimeHistory.create({
+      //   data: {
+      //     character: { connect: { id: character.id } },
+      //     crime: { connect: { id: crimeId } },
+      //     success: false,
+      //   }
+      // })
 
       await prisma.gameEvent.create({
         data: {

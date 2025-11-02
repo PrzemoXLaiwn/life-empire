@@ -33,9 +33,11 @@ export async function POST(request: Request) {
 
     if (!character) {
       // Create character if doesn't exist
+      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'Player'
       character = await prisma.character.create({
         data: {
           userId: user.id,
+          username: username,
           cityId: cityId
         }
       })

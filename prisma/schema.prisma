@@ -1,3 +1,6 @@
+// Life Empire - Complete Database Schema
+// This schema represents the full game world with 30+ interconnected systems
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,83 +11,1113 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ========================================
+// ENUMS
+// ========================================
+
+enum JobCategory {
+  ENTRY_LEVEL
+  SKILLED
+  PROFESSIONAL
+  EXECUTIVE
+}
+
+enum CrimeCategory {
+  THEFT
+  VEHICLE_THEFT
+  BURGLARY
+  ROBBERY
+  ASSAULT
+  HACKING
+  DRUG_DEALING
+  MURDER
+}
+
+enum CrimeTier {
+  PETTY
+  MINOR
+  MODERATE
+  SERIOUS
+  MAJOR
+  EXTREME
+}
+
+enum DistrictType {
+  DOWNTOWN
+  BUSINESS
+  RESIDENTIAL
+  INDUSTRIAL
+  GHETTO
+  SUBURBS
+  WATERFRONT
+}
+
+enum GangRank {
+  BOSS
+  UNDERBOSS
+  CAPO
+  SOLDIER
+  MEMBER
+}
+
+enum GangWarStatus {
+  DECLARED
+  SKIRMISH
+  FINAL_BATTLE
+  ENDED
+}
+
+enum BusinessType {
+  RESTAURANT
+  CAR_WASH
+  TECH_STARTUP
+  CASINO
+  NIGHTCLUB
+  OFFICE
+  RETAIL
+  WAREHOUSE
+  FACTORY
+  CAR_DEALERSHIP
+  PAWN_SHOP
+  LIQUOR_STORE
+  HOTEL
+  CONSULTING
+  FINANCE
+  SERVICES
+}
+
+enum DrugType {
+  WEED
+  COCAINE
+  METH
+  HEROIN
+}
+
+enum VehicleType {
+  SEDAN
+  SPORTS
+  LUXURY
+  SUV
+  MOTORCYCLE
+  TRUCK
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  MANSION
+  PENTHOUSE
+  WAREHOUSE
+  GARAGE
+}
+
+enum WeaponType {
+  PISTOL
+  RIFLE
+  SHOTGUN
+  SMG
+  SNIPER
+  EXPLOSIVE
+}
+
+enum ItemType {
+  LOCKPICK
+  MASK
+  HACKING_DEVICE
+  DRUGS
+  LAPTOP
+  FOOD
+  ENERGY_DRINK
+  FIRST_AID
+  BODY_ARMOR
+  NIGHT_VISION
+}
+
+enum HeistRole {
+  LEADER
+  HACKER
+  GUNMAN
+  DRIVER
+  LOOKOUT
+}
+
+enum HeistStatus {
+  PLANNING
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+  LAUNDERED
+  BUSINESS_PROFIT
+  CRIME_REWARD
+  JOB_SALARY
+  GANG_PAYOUT
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum EventType {
+  ECONOMIC
+  CRIMINAL
+  WORLD
+  POLITICAL
+}
+
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ========================================
+// CORE MODELS
+// ========================================
+
+model User {
+  id        String    @id
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  character Character?
+
+  @@map("users")
+}
+
+model Character {
+  id       String @id @default(cuid())
+  userId   String @unique
+  username String @unique
+
+  // Basic info
+  level      Int @default(1)
+  experience Int @default(0)
+  xpNeeded   Int @default(100)
+
+  // Financial
+  cash        Int @default(1000)
+  dirtyCash   Int @default(0)
+  bankBalance Int @default(0)
+
+  // Visual
+  avatar       String? @default("crown")
+  customAvatar String? @map("custom_avatar")
+
+  // Location
+  cityId     String?
+  districtId String?
+
+  // Health & Energy
+  health    Int @default(100)
+  maxHealth Int @default(100)
+  energy    Int @default(100)
+  maxEnergy Int @default(100)
+
+  // Attributes (0-100)
+  strength     Int @default(10)
+  intelligence Int @default(10)
+  charisma     Int @default(10)
+  stamina      Int @default(10)
+
+  // Criminal Skills (0-100)
+  shooting    Int @default(0)
+  driving     Int @default(0)
+  stealth     Int @default(0)
+  lockpicking Int @default(0)
+  hacking     Int @default(0)
+
+  // Business Skills (0-100)
+  management  Int @default(0)
+  negotiation Int @default(0)
+  accounting  Int @default(0)
+  marketing   Int @default(0)
+
+  // Status
+  reputation  Int   @default(0)
+  heatLevel   Float @default(0)
+  mentalState Int   @default(100)
+  stress      Int   @default(0)
+
+  // Time tracking
+  lastEnergyUpdate DateTime @default(now())
+  lastActive       DateTime @default(now())
+
+  // Jail & Death
+  inJail        Boolean   @default(false)
+  jailReleaseAt DateTime?
+  isDead        Boolean   @default(false)
+  deathCount    Int       @default(0)
+
+  // Premium
+  isPremium    Boolean   @default(false)
+  premiumUntil DateTime?
+
+  // Current job
+  currentJobId String?
+
+  // Current gang
+  gangId String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city              City?                @relation(fields: [cityId], references: [id])
+  district          District?            @relation(fields: [districtId], references: [id])
+  currentJob        Job?                 @relation("CurrentJob", fields: [currentJobId], references: [id])
+  gang              Gang?                @relation("GangMembers", fields: [gangId], references: [id])
+  gangMembership    GangMember?
+  ledGang           Gang?                @relation("GangLeader")
+  jobHistory        JobHistory[]
+  crimeHistory      CrimeHistory[]
+  businesses        Business[]
+  businessEmployees BusinessEmployee[]
+  vehicles          Vehicle[]
+  properties        Property[]
+  weapons           Weapon[]
+  inventory         InventoryItem[]
+  ledHeists         Heist[]              @relation("HeistLeader")
+  heistParticipants HeistParticipant[]
+  arrests           Arrest[]
+  transactions      Transaction[]
+  stockHoldings     StockHolding[]
+  cryptoHoldings    CryptoHolding[]
+  sentMessages      Message[]            @relation("SentMessages")
+  receivedMessages  Message[]            @relation("ReceivedMessages")
+  initiatedFriends  Friendship[]         @relation("Initiator")
+  receivedFriends   Friendship[]         @relation("Receiver")
+  activityLogs      ActivityLog[]
+  notifications     Notification[]
+  submittedReports  Report[]             @relation("ReportSubmitter")
+  receivedReports   Report[]             @relation("ReportTarget")
+  dailyRewards      DailyReward[]
+
+  @@index([userId])
+  @@index([username])
+  @@index([cityId])
+  @@index([districtId])
+  @@index([gangId])
+  @@index([currentJobId])
+  @@map("characters")
+}
+
+// ========================================
+// LOCATION MODELS
+// ========================================
+
 model City {
-  id            String      @id @default(cuid())
-  name          String      @unique
-  country       String
-  description   String
-  incomeBonus   Int         @default(0)
-  crimeBonus    Int         @default(0)
-  trainingBonus Int         @default(0)
-  businessBonus Int         @default(0)
-  minLevel      Int         @default(1)
-  createdAt     DateTime    @default(now())
-  requiresCar   Boolean     @default(false)
-  requiresPlane Boolean     @default(false)
-  characters    Character[]
+  id      String @id @default(cuid())
+  name    String @unique
+  country String
+
+  description String
+
+  crimeBonus       Int   @default(0)
+  businessTaxRate  Float @default(0.20)
+  policePresence   Int   @default(50)
+  gangActivity     Int   @default(50)
+
+  specializations Json @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  districts  District[]
+  characters Character[]
+  businesses Business[]
 
   @@map("cities")
 }
 
-model Character {
-  id                 String         @id @default(cuid())
-  userId             String         @unique
-  money              Int            @default(1000)
-  energy             Int            @default(100)
-  maxEnergy          Int            @default(100)
-  health             Int            @default(100)
-  maxHealth          Int            @default(100)
-  level              Int            @default(1)
-  xp                 Int            @default(0)
-  xpNeeded           Int            @default(100)
-  age                Int            @default(18)
-  ageInDays          Int            @default(0)
-  reputation         Int            @default(0)
-  rank               Int            @default(1)
-  education          String?
-  job                String?
-  jobTitle           String?
-  salary             Int            @default(0)
-  strength           Int            @default(10)
-  defense            Int            @default(10)
-  speed              Int            @default(10)
-  dexterity          Int            @default(10)
-  crimesCommitted    Int            @default(0)
-  jailTime           Int            @default(0)
-  criminalReputation Int            @default(0)
-  lastEnergyRegen    DateTime       @default(now())
-  lastHealthRegen    DateTime       @default(now())
-  lastAgeIncrement   DateTime       @default(now())
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  cityId             String?
-  hasCar             Boolean        @default(false)
-  hasDriverLicense   Boolean        @default(false)
-  hasPlane           Boolean        @default(false)
-  avatar             String?        @default("crown")
-  customAvatar       String?
-  city               City?          @relation(fields: [cityId], references: [id])
-  crimeHistory       CrimeHistory[]
+model District {
+  id     String       @id @default(cuid())
+  cityId String
+  name   String
+  type   DistrictType
+
+  dangerLevel    Int @default(50)
+  wealthLevel    Int @default(50)
+  policePresence Int @default(50)
+
+  allowedBusinessTypes Json @default("[]")
+
+  controllingGangId String?
+  contestedBy       Json    @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city              City               @relation(fields: [cityId], references: [id])
+  controllingGang   Gang?              @relation("ControlledDistricts", fields: [controllingGangId], references: [id])
+  characters        Character[]
+  businesses        Business[]
+  properties        Property[]
+  gangTerritories   GangTerritory[]
+  drugOperations    DrugOperation[]
+  gangWars          GangWar[]
 
   @@index([cityId])
-  @@map("characters")
+  @@index([controllingGangId])
+  @@map("districts")
+}
+
+// ========================================
+// JOB MODELS
+// ========================================
+
+model Job {
+  id          String      @id @default(cuid())
+  title       String
+  category    JobCategory
+  description String
+
+  requiredLevel  Int  @default(0)
+  requiredSkills Json @default("{}")
+
+  hourlyRate Int
+
+  shiftDurations     Json @default("[4, 8, 12]")
+  energyCostPerHour  Int  @default(10)
+  stressCostPerHour  Int  @default(5)
+  experiencePerHour  Int  @default(10)
+  skillGains         Json @default("{}")
+
+  injuryRisk  Float @default(0)
+  stressLevel Int   @default(5)
+
+  nextJobId      String?
+  promotionLevel Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nextJob          Job?          @relation("JobProgression", fields: [nextJobId], references: [id])
+  previousJobs     Job[]         @relation("JobProgression")
+  currentEmployees Character[]   @relation("CurrentJob")
+  jobHistory       JobHistory[]
+
+  @@index([category])
+  @@index([requiredLevel])
+  @@map("jobs")
+}
+
+model JobHistory {
+  id          String   @id @default(cuid())
+  characterId String
+  jobId       String
+
+  hoursWorked      Float @default(0)
+  totalPay         Int   @default(0)
+  experienceGained Int   @default(0)
+
+  startedAt   DateTime
+  completedAt DateTime?
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  job       Job       @relation(fields: [jobId], references: [id])
+
+  @@index([characterId])
+  @@index([jobId])
+  @@index([startedAt])
+  @@map("job_history")
+}
+
+// ========================================
+// CRIME MODELS
+// ========================================
+
+model Crime {
+  id          String        @id @default(cuid())
+  name        String
+  category    CrimeCategory
+  tier        CrimeTier
+  description String
+
+  requiredLevel  Int  @default(0)
+  requiredSkills Json @default("{}")
+  requiredItems  Json @default("[]")
+  crewSize       Json @default("{\"min\": 1, \"max\": 1}")
+
+  duration   Int @default(5)
+  energyCost Int @default(10)
+
+  baseSuccessRate Float @default(50)
+  skillWeight     Json  @default("{}")
+
+  minReward        Int @default(100)
+  maxReward        Int @default(1000)
+  experienceReward Int @default(20)
+
+  heatGain     Float @default(0.5)
+  heatOnFail   Float @default(1.0)
+  arrestChance Float @default(0.3)
+  injuryChance Float @default(0)
+  deathRisk    Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  crimeHistory CrimeHistory[]
+
+  @@index([category])
+  @@index([tier])
+  @@index([requiredLevel])
+  @@map("crimes")
 }
 
 model CrimeHistory {
+  id          String  @id @default(cuid())
+  characterId String
+  crimeId     String
+
+  success          Boolean
+  reward           Int     @default(0)
+  experienceGained Int     @default(0)
+  heatGained       Float   @default(0)
+
+  arrested        Boolean @default(false)
+  injured         Boolean @default(false)
+  healthLost      Int     @default(0)
+  witnessesKilled Int     @default(0)
+
+  committedAt DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  crime     Crime     @relation(fields: [crimeId], references: [id])
+
+  @@index([characterId])
+  @@index([crimeId])
+  @@index([committedAt])
+  @@map("crime_history")
+}
+
+// ========================================
+// GANG MODELS
+// ========================================
+
+model Gang {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  leaderId String  @unique
+  tag      String  @unique
+
+  cash           Int @default(0)
+  weeklyIncome   Int @default(0)
+  weeklyExpenses Int @default(0)
+
+  reputation  Int     @default(0)
+  fear        Int     @default(0)
+  memberCount Int     @default(1)
+
+  controlledDistrictIds Json @default("[]")
+
+  isActive  Boolean  @default(true)
+  foundedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leader              Character       @relation("GangLeader", fields: [leaderId], references: [id])
+  members             Character[]     @relation("GangMembers")
+  gangMembers         GangMember[]
+  controlledDistricts District[]      @relation("ControlledDistricts")
+  territories         GangTerritory[]
+  attackedWars        GangWar[]       @relation("AttackerGang")
+  defendedWars        GangWar[]       @relation("DefenderGang")
+  wonWars             GangWar[]       @relation("WinnerGang")
+  drugOperations      DrugOperation[]
+
+  @@index([leaderId])
+  @@map("gangs")
+}
+
+model GangMember {
+  id          String   @id @default(cuid())
+  gangId      String
+  characterId String   @unique
+  rank        GangRank
+
+  contributionPoints Int @default(0)
+  crimesCommitted    Int @default(0)
+
+  salaryPerWeek Int @default(0)
+
+  joinedAt DateTime @default(now())
+
+  gang      Gang      @relation(fields: [gangId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([gangId])
+  @@index([characterId])
+  @@map("gang_members")
+}
+
+model GangTerritory {
+  id         String @id @default(cuid())
+  gangId     String
+  districtId String
+
+  controlPercentage Int     @default(0)
+  isContested       Boolean @default(false)
+
+  weeklyProtection Int @default(0)
+  weeklyDrugSales  Int @default(0)
+
+  capturedAt DateTime @default(now())
+
+  gang     Gang     @relation(fields: [gangId], references: [id], onDelete: Cascade)
+  district District @relation(fields: [districtId], references: [id])
+
+  @@unique([gangId, districtId])
+  @@index([gangId])
+  @@index([districtId])
+  @@map("gang_territories")
+}
+
+model GangWar {
+  id             String        @id @default(cuid())
+  attackerGangId String
+  defenderGangId String
+  districtId     String
+  status         GangWarStatus
+
+  attackerPoints Int @default(0)
+  defenderPoints Int @default(0)
+
+  attackerCasualties Int @default(0)
+  defenderCasualties Int @default(0)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  winnerId String?
+
+  attackerGang Gang     @relation("AttackerGang", fields: [attackerGangId], references: [id])
+  defenderGang Gang     @relation("DefenderGang", fields: [defenderGangId], references: [id])
+  district     District @relation(fields: [districtId], references: [id])
+  winner       Gang?    @relation("WinnerGang", fields: [winnerId], references: [id])
+
+  @@index([attackerGangId])
+  @@index([defenderGangId])
+  @@index([districtId])
+  @@index([status])
+  @@map("gang_wars")
+}
+
+// ========================================
+// BUSINESS MODELS
+// ========================================
+
+model Business {
+  id         String       @id @default(cuid())
+  ownerId    String
+  cityId     String
+  districtId String
+  name       String
+  type       BusinessType
+
+  investmentCost  Int   @default(0)
+  monthlyRevenue  Int   @default(0)
+  monthlyExpenses Int   @default(0)
+  profitMargin    Float @default(0)
+
+  isOperational Boolean @default(true)
+  isLaundering  Boolean @default(false)
+
+  employeeCount Int @default(0)
+
+  innovationPoints Int @default(0)
+  researchLevel    Int @default(0)
+
+  marketScore        Int @default(50)
+  innovationScore    Int @default(50)
+  profitabilityScore Int @default(50)
+
+  openedAt DateTime @default(now())
+
+  owner     Character          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  city      City               @relation(fields: [cityId], references: [id])
+  district  District           @relation(fields: [districtId], references: [id])
+  employees BusinessEmployee[]
+
+  @@index([ownerId])
+  @@index([cityId])
+  @@index([districtId])
+  @@index([type])
+  @@map("businesses")
+}
+
+model BusinessEmployee {
+  id          String @id @default(cuid())
+  businessId  String
+  characterId String
+
+  position String
+  salary   Int    @default(0)
+
+  hiredAt DateTime @default(now())
+
+  business  Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([characterId])
+  @@map("business_employees")
+}
+
+// ========================================
+// DRUG OPERATION MODELS
+// ========================================
+
+model DrugOperation {
+  id         String   @id @default(cuid())
+  gangId     String
+  districtId String
+  drugType   DrugType
+
+  setupCost Int @default(0)
+  capacity  Int @default(10)
+
+  currentBatch   Int       @default(0)
+  batchStartedAt DateTime?
+  batchDuration  Int       @default(24)
+
+  costPerBatch   Int @default(0)
+  sellPricePerKg Int @default(0)
+
+  policeRaidRisk  Float @default(0.1)
+  rivalAttackRisk Float @default(0.1)
+
+  isActive Boolean @default(true)
+
+  gang      Gang            @relation(fields: [gangId], references: [id], onDelete: Cascade)
+  district  District        @relation(fields: [districtId], references: [id])
+  inventory DrugInventory[]
+
+  @@index([gangId])
+  @@index([districtId])
+  @@map("drug_operations")
+}
+
+model DrugInventory {
+  id              String   @id @default(cuid())
+  drugOperationId String
+  drugType        DrugType
+
+  quantity Float @default(0)
+  quality  Int   @default(50)
+
+  producedAt DateTime @default(now())
+
+  drugOperation DrugOperation @relation(fields: [drugOperationId], references: [id], onDelete: Cascade)
+
+  @@index([drugOperationId])
+  @@map("drug_inventory")
+}
+
+// ========================================
+// VEHICLE & PROPERTY MODELS
+// ========================================
+
+model Vehicle {
+  id          String      @id @default(cuid())
+  characterId String
+  model       String
+  type        VehicleType
+
+  speed          Int @default(50)
+  handling       Int @default(50)
+  storage        Int @default(50)
+  suspicionLevel Int @default(10)
+
+  condition Int     @default(100)
+  isStolen  Boolean @default(false)
+
+  purchasePrice Int
+  acquiredAt    DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@map("vehicles")
+}
+
+model Property {
+  id          String       @id @default(cuid())
+  characterId String
+  districtId  String
+  type        PropertyType
+
+  purchasePrice Int
+  monthlyRent   Int @default(0)
+
+  storageCapacity Int     @default(0)
+  canHostGangHQ   Boolean @default(false)
+  reputationBonus Int     @default(0)
+
+  isRented Boolean @default(false)
+
+  acquiredAt DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  district  District  @relation(fields: [districtId], references: [id])
+
+  @@index([characterId])
+  @@index([districtId])
+  @@map("properties")
+}
+
+// ========================================
+// INVENTORY MODELS
+// ========================================
+
+model Weapon {
+  id          String     @id @default(cuid())
+  characterId String
+  name        String
+  type        WeaponType
+
+  damage   Int @default(50)
+  accuracy Int @default(50)
+  fireRate Int @default(50)
+  capacity Int @default(10)
+
+  condition Int @default(100)
+  ammo      Int @default(0)
+
+  purchasePrice Int
+  isLegal       Boolean @default(false)
+
+  acquiredAt DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@map("weapons")
+}
+
+model InventoryItem {
+  id          String   @id @default(cuid())
+  characterId String
+  itemType    ItemType
+
+  quantity Int @default(1)
+  quality  Int @default(100)
+
+  acquiredAt DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@map("inventory_items")
+}
+
+// ========================================
+// HEIST MODELS
+// ========================================
+
+model Heist {
+  id         String      @id @default(cuid())
+  leaderId   String
+  targetType String
+  difficulty Int         @default(50)
+
+  planningTime  Int @default(24)
+  equipmentCost Int @default(0)
+  crewSize      Int @default(4)
+
+  status      HeistStatus
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  totalLoot    Int  @default(0)
+  splitPercent Json @default("{\"leader\": 40}")
+
+  policeResponse Int @default(0)
+  casualties     Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  leader       Character          @relation("HeistLeader", fields: [leaderId], references: [id])
+  participants HeistParticipant[]
+
+  @@index([leaderId])
+  @@index([status])
+  @@map("heists")
+}
+
+model HeistParticipant {
   id          String    @id @default(cuid())
+  heistId     String
+  characterId String
+  role        HeistRole
+
+  shareAmount Int @default(0)
+
+  joinedAt DateTime @default(now())
+
+  heist     Heist     @relation(fields: [heistId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([heistId])
+  @@index([characterId])
+  @@map("heist_participants")
+}
+
+// ========================================
+// LEGAL & FINANCE MODELS
+// ========================================
+
+model Arrest {
+  id          String  @id @default(cuid())
   characterId String
   crimeType   String
-  success     Boolean
-  moneyGained Int       @default(0)
-  xpGained    Int       @default(0)
-  jailTime    Int       @default(0)
-  timestamp   DateTime  @default(now())
-  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  evidence    Int     @default(50)
+
+  sentenceDays Int     @default(1)
+  bail         Int     @default(0)
+  released     Boolean @default(false)
+
+  arrestedAt DateTime  @default(now())
+  releaseAt  DateTime?
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@index([arrestedAt])
+  @@map("arrests")
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  characterId String
+  type        TransactionType
+
+  amount       Int
+  isDirtyMoney Boolean @default(false)
+  source       String
+  description  String?
+
+  timestamp DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId])
   @@index([timestamp])
-  @@map("crime_history")
+  @@map("transactions")
 }
+
+// ========================================
+// MARKET MODELS
+// ========================================
+
+model StockHolding {
+  id            String @id @default(cuid())
+  characterId   String
+  companySymbol String
+
+  shares           Int   @default(0)
+  avgPurchasePrice Float
+
+  currentValue Float @default(0)
+
+  firstPurchaseAt DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, companySymbol])
+  @@index([characterId])
+  @@map("stock_holdings")
+}
+
+model CryptoHolding {
+  id          String @id @default(cuid())
+  characterId String
+  cryptoType  String
+
+  amount           Float
+  avgPurchasePrice Float
+
+  currentValue Float @default(0)
+
+  firstPurchaseAt DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, cryptoType])
+  @@index([characterId])
+  @@map("crypto_holdings")
+}
+
+// ========================================
+// SOCIAL MODELS
+// ========================================
+
+model Message {
+  id         String  @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean @default(false)
+
+  sentAt DateTime @default(now())
+
+  sender   Character @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver Character @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([sentAt])
+  @@map("messages")
+}
+
+model Friendship {
+  id          String           @id @default(cuid())
+  initiatorId String
+  receiverId  String
+  status      FriendshipStatus
+
+  createdAt  DateTime  @default(now())
+  acceptedAt DateTime?
+
+  initiator Character @relation("Initiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  receiver  Character @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([initiatorId, receiverId])
+  @@index([initiatorId])
+  @@index([receiverId])
+  @@map("friendships")
+}
+
+// ========================================
+// TRACKING & EVENTS MODELS
+// ========================================
+
+model ActivityLog {
+  id          String  @id @default(cuid())
+  characterId String
+  action      String
+  details     Json    @default("{}")
+  ipAddress   String?
+
+  timestamp DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@index([timestamp])
+  @@map("activity_logs")
+}
+
+model RandomEvent {
+  id          String    @id @default(cuid())
+  eventType   EventType
+  name        String
+  description String
+
+  effects  Json @default("{}")
+  duration Int  @default(24)
+
+  isActive    Boolean   @default(true)
+  triggeredAt DateTime  @default(now())
+  endsAt      DateTime?
+
+  @@index([isActive])
+  @@index([eventType])
+  @@map("random_events")
+}
+
+model Notification {
+  id          String  @id @default(cuid())
+  characterId String
+  type        String
+  title       String
+  message     String
+  isRead      Boolean @default(false)
+  link        String?
+
+  createdAt DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ========================================
+// MODERATION MODELS
+// ========================================
+
+model Report {
+  id            String         @id @default(cuid())
+  reporterId    String
+  targetId      String
+  violationType String
+
+  description  String @db.Text
+  evidence     String? @db.Text
+  incidentDate DateTime
+
+  status   ReportStatus   @default(PENDING)
+  priority ReportPriority @default(MEDIUM)
+
+  assignedToModerator String?
+  moderatorNotes      String? @db.Text
+  resolution          String? @db.Text
+
+  submittedAt DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  resolvedAt  DateTime?
+
+  reporter Character @relation("ReportSubmitter", fields: [reporterId], references: [id], onDelete: Cascade)
+  target   Character @relation("ReportTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([targetId])
+  @@index([status])
+  @@index([violationType])
+  @@index([submittedAt])
+  @@index([priority])
+  @@map("reports")
+}
+
+model DailyReward {
+  id          String   @id @default(cuid())
+  characterId String
+  day         Int
+  claimedAt   DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, day])
+  @@index([characterId])
+  @@map("daily_rewards")
+}
+
+// ========================================
+// LEGACY MODELS
+// ========================================
 
 model GameEvent {
   id        String   @id @default(cuid())

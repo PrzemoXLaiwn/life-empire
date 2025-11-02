@@ -41,61 +41,17 @@ export async function POST(request: Request) {
       )
     }
 
-    if (character.level < destinationCity.minLevel) {
-      return NextResponse.json(
-        { 
-          error: `You need to be level ${destinationCity.minLevel} to travel to ${destinationCity.name}`,
-          requiredLevel: destinationCity.minLevel,
-          currentLevel: character.level
-        },
-        { status: 403 }
-      )
-    }
-
     const isDifferentCountry = character.city?.country !== destinationCity.country
-
-    if (isDifferentCountry && destinationCity.requiresPlane && !character.hasPlane) {
-      return NextResponse.json(
-        { 
-          error: `You need a plane to travel to ${destinationCity.country}. Buy one in the Market!`,
-          requiresPlane: true
-        },
-        { status: 403 }
-      )
-    }
-
-    if (!isDifferentCountry && destinationCity.requiresCar) {
-      if (!character.hasDriverLicense) {
-        return NextResponse.json(
-          { 
-            error: `You need a driver's license to travel to ${destinationCity.name}`,
-            requiresLicense: true
-          },
-          { status: 403 }
-        )
-      }
-
-      if (!character.hasCar) {
-        return NextResponse.json(
-          { 
-            error: `You need a car to travel to ${destinationCity.name}. Buy one in the Market!`,
-            requiresCar: true
-          },
-          { status: 403 }
-        )
-      }
-    }
-
     const baseCost = isDifferentCountry ? 5000 : 1000
-    const levelMultiplier = destinationCity.minLevel
-    const travelCost = baseCost * levelMultiplier
+    const travelCost = baseCost
 
-    if (character.money < travelCost) {
+    const currentCash = Number(character.cash)
+    if (currentCash < travelCost) {
       return NextResponse.json(
-        { 
+        {
           error: `Not enough money. Travel costs $${travelCost.toLocaleString()}`,
           cost: travelCost,
-          currentMoney: character.money
+          currentMoney: currentCash
         },
         { status: 403 }
       )
@@ -117,7 +73,7 @@ export async function POST(request: Request) {
       where: { userId: user.id },
       data: {
         cityId,
-        money: character.money - travelCost,
+        cash: currentCash - travelCost,
         energy: character.energy - energyCost
       },
       include: { city: true }
@@ -170,7 +126,7 @@ export async function GET() {
     const cities = await prisma.city.findMany({
       orderBy: [
         { country: 'asc' },
-        { minLevel: 'asc' }
+        { name: 'asc' }
       ]
     })
 
@@ -179,31 +135,12 @@ export async function GET() {
     cities.forEach(city => {
       const isDifferentCountry = character.city?.country !== city.country
       const isCurrentCity = character.cityId === city.id
-      
-      const meetsLevelReq = character.level >= city.minLevel
-      const hasLicense = character.hasDriverLicense
-      const hasCar = character.hasCar
-      const hasPlane = character.hasPlane
 
-      let canTravel = meetsLevelReq && !isCurrentCity
-      let blockedReason = ''
-
-      if (!meetsLevelReq) {
-        canTravel = false
-        blockedReason = `Requires Level ${city.minLevel}`
-      } else if (isDifferentCountry && city.requiresPlane && !hasPlane) {
-        canTravel = false
-        blockedReason = 'Requires Plane'
-      } else if (!isDifferentCountry && city.requiresCar && !hasCar) {
-        canTravel = false
-        blockedReason = 'Requires Car'
-      } else if (!isDifferentCountry && city.requiresCar && !hasLicense) {
-        canTravel = false
-        blockedReason = "Requires Driver's License"
-      }
+      const canTravel = !isCurrentCity
+      const blockedReason = isCurrentCity ? 'Current Location' : ''
 
       const baseCost = isDifferentCountry ? 5000 : 1000
-      const travelCost = baseCost * city.minLevel
+      const travelCost = baseCost
       const energyCost = isDifferentCountry ? 50 : 25
 
       const cityInfo = {
@@ -213,13 +150,7 @@ export async function GET() {
         canTravel,
         blockedReason,
         travelCost,
-        energyCost,
-        requirements: {
-          level: city.minLevel,
-          car: city.requiresCar,
-          plane: city.requiresPlane,
-          license: city.requiresCar
-        }
+        energyCost
       }
 
       if (!citiesByCountry[city.country]) {
@@ -228,13 +159,10 @@ export async function GET() {
       citiesByCountry[city.country].push(cityInfo)
     })
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       citiesByCountry,
       currentCity: character.city,
-      characterLevel: character.level,
-      hasDriverLicense: character.hasDriverLicense,
-      hasCar: character.hasCar,
-      hasPlane: character.hasPlane
+      characterLevel: character.level
     })
   } catch (error) {
     console.error('❌ GET /api/travel error:', error)

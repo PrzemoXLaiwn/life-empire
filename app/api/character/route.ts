@@ -73,35 +73,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Create character with city
+    const username = user.user_metadata?.username || user.email?.split('@')[0] || 'Player'
     const character = await prisma.character.create({
       data: {
         userId: user.id,
+        username: username,
         cityId: cityId,
-        money: 1000,
+        cash: 1000,
         energy: 100,
-        maxEnergy: 100,
         health: 100,
-        maxHealth: 100,
         level: 1,
-        xp: 0,
-        xpNeeded: 100,
-        age: 18,
-        ageInDays: 0,
+        experience: 0,
         reputation: 0,
-        rank: 1,
         strength: 10,
-        defense: 10,
-        speed: 10,
-        dexterity: 10,
-        crimesCommitted: 0,
-        jailTime: 0,
-        criminalReputation: 0,
-        hasDriverLicense: false,
-        hasCar: false,
-        hasPlane: false,
-        lastEnergyRegen: new Date(),
-        lastHealthRegen: new Date(),
-        lastAgeIncrement: new Date(),
         avatar: 'crown',
       },
       include: { city: true }

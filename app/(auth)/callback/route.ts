@@ -29,6 +29,30 @@ export async function GET(request: Request) {
 
     console.log('✅ Auth callback successful for user:', data.user.id)
 
+    // 🔥 ENSURE USER EXISTS IN DATABASE
+    try {
+      const userResponse = await fetch(`${origin}/api/user/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': request.headers.get('cookie') || ''
+        },
+        body: JSON.stringify({
+          userId: data.user.id,
+          email: data.user.email
+        })
+      })
+
+      if (!userResponse.ok) {
+        console.error('Failed to create user in database')
+      } else {
+        console.log('✅ User verified/created in database')
+      }
+    } catch (dbError) {
+      console.error('Error ensuring user exists:', dbError)
+      // Continue anyway - character creation will handle this
+    }
+
     // Determine redirect URL
     const forwardedHost = request.headers.get('x-forwarded-host')
     const isLocalEnv = process.env.NODE_ENV === 'development'

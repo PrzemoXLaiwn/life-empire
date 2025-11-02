@@ -3,6 +3,18 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
   
+  // ✅ Supabase Images Configuration
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'knwaqovphjrgvpszpbei.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
+  
   // ✅ Security Headers
   async headers() {
     return [

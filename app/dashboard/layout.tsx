@@ -1,104 +1,94 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { useCharacterStore } from '@/lib/character-store'
-import { Sidebar } from '@/components/dashboard/Sidebar'
-import { TopBar } from '@/components/dashboard/TopBar'
-import { FloatingChat } from '@/components/dashboard/FloatingChat'
-import { FloatingFeed } from '@/components/dashboard/FloatingFeed'
-import type { User } from '@supabase/supabase-js'
+/**
+ * Dashboard Layout
+ *
+ * Main layout for the game dashboard
+ * - Handles authentication
+ * - Loads character data
+ * - Redirects to character creation if needed
+ * - Shows sidebar and top bar
+ */
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const supabase = createClient()
-  const { fetchCharacter, character } = useCharacterStore()
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { useCharacterStore } from '@/lib/character-store';
+import { Sidebar } from '@/components/dashboard/Sidebar';
+import { TopBar } from '@/components/dashboard/TopBar';
+import type { User } from '@supabase/supabase-js';
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
+  const { fetchCharacter, character, error } = useCharacterStore();
 
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
 
     const checkAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        if (!mounted) return
-        
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
         if (!user) {
-          router.push('/login')
-          return
+          router.push('/login');
+          return;
         }
 
-        setUser(user)
+        setUser(user);
 
-        // Fetch character tylko raz
-        if (!character) {
-          await fetchCharacter()
-          
-          // Check if character was created
-          setTimeout(async () => {
-            if (!mounted) return
-            
-            const currentState = useCharacterStore.getState()
-            
-            if (!currentState.character) {
-              console.log('🎮 Creating new character...')
-              
-              const response = await fetch('/api/character', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  userId: user.id,
-                  name: 'Player'
-                })
-              })
+        // Fetch character
+        await fetchCharacter();
 
-              if (response.ok) {
-                await fetchCharacter()
-              }
-            }
-            
-            if (mounted) {
-              setIsLoading(false)
-            }
-          }, 500)
-        } else {
-          setIsLoading(false)
-        }
+        // Check if character exists after fetch
+        setTimeout(() => {
+          if (!mounted) return;
+
+          const currentState = useCharacterStore.getState();
+
+          if (!currentState.character && currentState.error) {
+            // No character found, redirect to character creation
+            console.log('No character found, redirecting to creation');
+            router.push('/create-character');
+            return;
+          }
+
+          setIsLoading(false);
+        }, 500);
       } catch (error) {
-        console.error('Auth error:', error)
+        console.error('Auth error:', error);
         if (mounted) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
       }
-    }
+    };
 
-    checkAuth()
+    checkAuth();
 
     // Auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return
-        
-        if (event === 'SIGNED_OUT') {
-          router.push('/login')
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user)
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
+      if (event === 'SIGNED_OUT') {
+        router.push('/login');
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
       }
-    )
+    });
 
     return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
-  }, []) // TYLKO PUSTY ARRAY!
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   if (isLoading || !user) {
     return (
@@ -108,7 +98,7 @@ export default function DashboardLayout({
           <p className="text-[#888] text-xs uppercase tracking-wider">Loading your empire...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!character) {
@@ -116,16 +106,18 @@ export default function DashboardLayout({
       <div className="flex items-center justify-center min-h-screen bg-[#0f0f0f]">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-solid border-[#5cb85c] border-r-transparent mb-4"></div>
-          <p className="text-[#888] text-xs uppercase tracking-wider">Setting up your character...</p>
+          <p className="text-[#888] text-xs uppercase tracking-wider">
+            Setting up your character...
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="flex h-screen bg-[#0f0f0f] overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block desktop-sidebar">
+      <aside className="hidden lg:block w-64 border-r border-[#2a2a2a]">
         <Sidebar />
       </aside>
 
@@ -135,14 +127,8 @@ export default function DashboardLayout({
         <TopBar />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f0f0f]">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0f0f0f]">{children}</main>
       </div>
-
-      {/* Floating Widgets */}
-      <FloatingChat />
-      <FloatingFeed />
     </div>
-  )
+  );
 }

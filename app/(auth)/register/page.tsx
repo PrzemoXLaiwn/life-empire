@@ -10,13 +10,7 @@ interface City {
   name: string
   country: string
   description: string
-  incomeBonus: number
   crimeBonus: number
-  trainingBonus: number
-  businessBonus: number
-  minLevel: number
-  requiresCar: boolean
-  requiresPlane: boolean
 }
 
 const COUNTRIES = [
@@ -43,44 +37,8 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    // Trim inputs
-    const trimmedEmail = email.trim()
-    const trimmedUsername = username.trim()
-
-    // Validation
-    if (!trimmedEmail || !password || !confirmPassword || !trimmedUsername) {
+    if (!email || !password || !confirmPassword || !username) {
       setError('All fields are required')
-      return
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(trimmedEmail)) {
-      setError('Please enter a valid email address')
-      return
-    }
-
-    // Username validation
-    if (trimmedUsername.length < 3 || trimmedUsername.length > 20) {
-      setError('Username must be between 3 and 20 characters')
-      return
-    }
-
-    // Username format validation (alphanumeric and underscore only)
-    const usernameRegex = /^[a-zA-Z0-9_]+$/
-    if (!usernameRegex.test(trimmedUsername)) {
-      setError('Username can only contain letters, numbers, and underscores')
-      return
-    }
-
-    // Password validation
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-
-    if (password.length > 72) {
-      setError('Password must be less than 72 characters')
       return
     }
 
@@ -89,9 +47,15 @@ export default function RegisterPage() {
       return
     }
 
-    // Update state with trimmed values
-    setEmail(trimmedEmail)
-    setUsername(trimmedUsername)
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
+
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters')
+      return
+    }
 
     setStep(2)
   }
@@ -110,7 +74,7 @@ export default function RegisterPage() {
       
       const data = await response.json()
       const countryCities = data.cities.filter(
-        (c: City) => c.country === countryCode && c.minLevel === 1
+        (c: City) => c.country === countryCode
       )
       
       if (countryCities.length === 0) {
@@ -141,77 +105,80 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError('')
 
-    let userId: string | null = null
-
     try {
-      // 1. Create account
+      // 1. Create Supabase Auth account
+      console.log('🔥 Step 1: Creating Supabase auth account...')
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.trim(),
+        email,
         password,
-        options: {
-          data: { username: username.trim() },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+        options: { 
+          data: { username }
         }
       })
 
       if (authError) {
-        // Better error messages
-        if (authError.message.includes('already registered')) {
-          throw new Error('This email is already registered. Please login instead.')
-        }
-        throw new Error(authError.message)
+        console.error('❌ Auth error:', authError)
+        throw authError
+      }
+      if (!authData.user) throw new Error('Failed to create account')
+
+      console.log('✅ Auth account created:', authData.user.id)
+
+      // Wait for auth to settle
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // 2. Create User record in Prisma database
+      console.log('🔥 Step 2: Creating user record for:', authData.user.id)
+      const userResponse = await fetch('/api/user/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: authData.user.id,
+          email: authData.user.email
+        })
+      })
+
+      console.log('User response status:', userResponse.status)
+      const userData = await userResponse.json()
+      console.log('User response data:', userData)
+
+      if (!userResponse.ok) {
+        console.error('❌ User creation failed:', userData)
+        throw new Error(userData.error || 'Failed to create user record')
       }
 
-      if (!authData.user) {
-        throw new Error('Failed to create account. Please try again.')
+      console.log('✅ User created in database')
+
+      // 3. Create character
+      console.log('🔥 Step 3: Creating character...')
+      const charResponse = await fetch('/api/character', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          cityId: selectedCity,
+          username: username
+        })
+      })
+
+      console.log('Character response status:', charResponse.status)
+      const charData = await charResponse.json()
+      console.log('Character response data:', charData)
+
+      if (!charResponse.ok) {
+        console.error('❌ Character creation failed:', charData)
+        throw new Error(charData.error || 'Failed to create character')
       }
 
-      userId = authData.user.id
+      console.log('✅ Character created!')
 
-      // 2. Create character with city - with retry logic
-      let retries = 3
-      let charCreated = false
-      let lastError: Error | null = null
-
-      while (retries > 0 && !charCreated) {
-        try {
-          const charResponse = await fetch('/api/character', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cityId: selectedCity })
-          })
-
-          if (!charResponse.ok) {
-            const errorData = await charResponse.json()
-            throw new Error(errorData.error || 'Failed to create character')
-          }
-
-          charCreated = true
-        } catch (err) {
-          lastError = err as Error
-          retries--
-          if (retries > 0) {
-            await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1s before retry
-          }
-        }
-      }
-
-      if (!charCreated) {
-        throw new Error(`Failed to create character after multiple attempts: ${lastError?.message}`)
-      }
-
-      // Success!
+      // Success! Redirect to dashboard
+      console.log('🎉 Registration complete! Redirecting...')
       router.push('/dashboard')
-      router.refresh()
     } catch (error: any) {
-      console.error('Registration error:', error)
-
-      // If character creation failed but account was created, inform the user
-      if (userId && error.message.includes('character')) {
-        setError('Account created but character setup failed. Please contact support or try logging in.')
-      } else {
-        setError(error.message || 'Failed to create account. Please try again.')
-      }
+      console.error('❌ Registration error:', error)
+      setError(error.message || 'Failed to create account')
     } finally {
       setIsLoading(false)
     }
@@ -223,7 +190,7 @@ export default function RegisterPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#fff] uppercase tracking-wider mb-2">
-            LIFE SYNDICATE
+            LIFE EMPIRE
           </h1>
           <p className="text-sm text-[#888]">Create Your Account</p>
         </div>
@@ -307,7 +274,7 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#333] text-[#d0d0d0] text-sm focus:outline-none focus:border-[#5cb85c]"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                 </div>
 
@@ -319,7 +286,7 @@ export default function RegisterPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#333] text-[#d0d0d0] text-sm focus:outline-none focus:border-[#5cb85c]"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                 </div>
 
@@ -376,7 +343,7 @@ export default function RegisterPage() {
               <div className="ls-section-header">Choose Your Starting City</div>
               <div className="ls-section-content">
                 <p className="text-xs text-[#888] mb-4">
-                  Each city offers different bonuses. You'll be locked here until level 10.
+                  Each city offers different opportunities. Choose wisely!
                 </p>
                 <div className="space-y-3">
                   {cities.map((city) => (
@@ -385,27 +352,17 @@ export default function RegisterPage() {
                       onClick={() => handleCitySelect(city.id)}
                       className={`ls-action-item cursor-pointer ${
                         selectedCity === city.id ? 'ring-2 ring-[#5cb85c]' : ''
-                      }`}
-                    >
+                      }`}>
                       <div className="ls-action-info">
                         <div className="ls-action-title">{city.name}</div>
                         <div className="ls-action-details">
                           <span className="text-xs text-[#888]">{city.description}</span>
                         </div>
-                        <div className="mt-2 space-y-1">
-                          {city.incomeBonus > 0 && (
-                            <p className="text-xs text-success">+{city.incomeBonus}% Income</p>
-                          )}
-                          {city.crimeBonus > 0 && (
+                        {city.crimeBonus > 0 && (
+                          <div className="mt-2">
                             <p className="text-xs text-success">+{city.crimeBonus}% Crime Success</p>
-                          )}
-                          {city.trainingBonus > 0 && (
-                            <p className="text-xs text-success">+{city.trainingBonus}% Training</p>
-                          )}
-                          {city.businessBonus > 0 && (
-                            <p className="text-xs text-success">-{city.businessBonus}% Business Costs</p>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

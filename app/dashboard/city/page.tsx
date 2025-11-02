@@ -76,10 +76,6 @@ export default function CityPage() {
               <span className="ls-info-label">Description:</span>
               <span className="ls-info-value text-xs text-[#888]">{city.description}</span>
             </div>
-            <div className="ls-info-row">
-              <span className="ls-info-label">Min Level:</span>
-              <span className="ls-info-value">{city.minLevel}</span>
-            </div>
           </div>
         </div>
 
@@ -88,28 +84,10 @@ export default function CityPage() {
           <div className="ls-section-header">🌆 City Bonuses</div>
           <div className="ls-section-content">
             <div className="space-y-2">
-              {city.incomeBonus > 0 && (
-                <div className="flex items-center justify-between p-2 bg-[#1a1a1a] border border-[#2a2a2a]">
-                  <span className="text-xs text-[#d0d0d0]">Income</span>
-                  <span className="text-sm font-bold text-success">+{city.incomeBonus}%</span>
-                </div>
-              )}
-              {city.crimeBonus > 0 && (
+              {Number(city.crimeBonus) > 0 && (
                 <div className="flex items-center justify-between p-2 bg-[#1a1a1a] border border-[#2a2a2a]">
                   <span className="text-xs text-[#d0d0d0]">Crime Success</span>
-                  <span className="text-sm font-bold text-success">+{city.crimeBonus}%</span>
-                </div>
-              )}
-              {city.trainingBonus > 0 && (
-                <div className="flex items-center justify-between p-2 bg-[#1a1a1a] border border-[#2a2a2a]">
-                  <span className="text-xs text-[#d0d0d0]">Training Speed</span>
-                  <span className="text-sm font-bold text-success">+{city.trainingBonus}%</span>
-                </div>
-              )}
-              {city.businessBonus > 0 && (
-                <div className="flex items-center justify-between p-2 bg-[#1a1a1a] border border-[#2a2a2a]">
-                  <span className="text-xs text-[#d0d0d0]">Business Costs</span>
-                  <span className="text-sm font-bold text-success">-{city.businessBonus}%</span>
+                  <span className="text-sm font-bold text-success">+{Number(city.crimeBonus)}%</span>
                 </div>
               )}
             </div>

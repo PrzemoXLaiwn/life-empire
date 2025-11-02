@@ -19,7 +19,7 @@ const protectedApiPaths = [
   '/api/cities'
 ]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ✅ Sprawdź czy to chroniona ścieżka
@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl)
       }
     } catch (error) {
-      console.error('Middleware auth error:', error)
+      console.error('Proxy auth error:', error)
       
       if (isProtectedApi) {
         return NextResponse.json(
@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
-// ✅ Konfiguracja - na jakich ścieżkach middleware działa
+// ✅ Konfiguracja - na jakich ścieżkach proxy działa
 export const config = {
   matcher: [
     /*
