@@ -24,10 +24,7 @@ export const reportSubmissionSchema = z.object({
     .max(20, 'Username must be at most 20 characters')
     .regex(/^[a-zA-Z0-9_-]+$/, 'Username contains invalid characters'),
 
-  violationType: z.enum(ViolationTypes, {
-    required_error: 'Violation type is required',
-    invalid_type_error: 'Invalid violation type selected'
-  }),
+  violationType: z.enum(ViolationTypes),
 
   description: z
     .string()
@@ -68,5 +65,5 @@ export type ReportSubmission = z.infer<typeof reportSubmissionSchema>
 
 // Helper function to format validation errors
 export function formatValidationErrors(error: z.ZodError): string[] {
-  return error.errors.map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`)
+  return error.issues.map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`)
 }
