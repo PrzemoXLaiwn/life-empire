@@ -11,8 +11,10 @@ export async function GET() {
       totalBusinesses,
       totalGangs
     ] = await Promise.all([
+      // Total players
       prisma.character.count(),
-      
+
+      // Online players (active in last 15 minutes)
       prisma.character.count({
         where: {
           lastActive: {
@@ -20,51 +22,50 @@ export async function GET() {
           }
         }
       }),
-      
+
+      // Total wealth (sum of all cash + bank)
       prisma.character.aggregate({
         _sum: {
           cash: true,
-          bankBalance: true,
-          dirtyCash: true
+          bankBalance: true
         }
       }),
-      
-      // ✅ FIXED: Poprawne query dla Business
-      prisma.business.count({
-        where: {
-          ownerId: {
-            not: null
-          }
-        }
-      }),
-      
-      prisma.gang.count({
-        where: {
-          isActive: true
-        }
-      })
+
+      // Total businesses ✅ UPROSZCZONE - bez where
+      prisma.business.count(),
+
+      // Total gangs
+      prisma.gang.count()
     ])
 
-    const totalWealthSum = 
-      (totalWealth._sum?.cash || 0) + 
-      (totalWealth._sum?.bankBalance || 0) +
-      (totalWealth._sum?.dirtyCash || 0)
+    const totalCash = (totalWealth._sum.cash || 0) + (totalWealth._sum.bankBalance || 0)
 
     return NextResponse.json({
       success: true,
       data: {
-        totalPlayers: totalPlayers || 0,
-        onlinePlayers: onlinePlayers || 0,
-        totalWealth: totalWealthSum,
-        totalBusinesses: totalBusinesses || 0,
-        totalGangs: totalGangs || 0,
+        totalPlayers,
+        onlinePlayers,
+        totalWealth: totalCash,
+        totalBusinesses,
+        totalGangs,
         lastUpdated: new Date().toISOString()
       }
     })
   } catch (error) {
     console.error('Failed to fetch global stats:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch statistics' },
+      { 
+        success: false, 
+        error: 'Failed to fetch stats',
+        data: {
+          totalPlayers: 0,
+          onlinePlayers: 0,
+          totalWealth: 0,
+          totalBusinesses: 0,
+          totalGangs: 0,
+          lastUpdated: new Date().toISOString()
+        }
+      },
       { status: 500 }
     )
   }
