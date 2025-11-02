@@ -16,7 +16,6 @@ import {
   Clock,
   DollarSign
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
 interface DailyReward {
@@ -110,14 +109,13 @@ export default function DailyRewardsPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Button
+          <button
             onClick={() => router.push('/dashboard')}
-            variant="ghost"
-            className="text-[#888] hover:text-white hover:bg-[#1a1a1a]"
+            className="flex items-center gap-2 px-4 py-2 text-[#888] hover:text-white hover:bg-[#1a1a1a] border border-[#333] rounded transition-all"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Back to Dashboard</span>
+          </button>
         </div>
 
         {/* Title Section */}
@@ -171,23 +169,23 @@ export default function DailyRewardsPage() {
         {/* Claim Button */}
         {rewards.canClaimToday && (
           <div className="text-center mb-8">
-            <Button
+            <button
               onClick={claimReward}
               disabled={claiming}
-              className="bg-gradient-to-r from-[#f0ad4e] to-[#d4af37] hover:from-[#e6a23c] hover:to-[#c4a030] text-black font-bold px-8 py-4 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="bg-gradient-to-r from-[#f0ad4e] to-[#d4af37] hover:from-[#e6a23c] hover:to-[#c4a030] text-black font-bold px-8 py-4 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
             >
               {claiming ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></div>
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                   Claiming...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5 mr-2" />
+                  <Sparkles className="w-5 h-5" />
                   Claim Today's Reward
                 </>
               )}
-            </Button>
+            </button>
           </div>
         )}
 
@@ -212,7 +210,7 @@ export default function DailyRewardsPage() {
               className={`relative p-6 text-center transition-all duration-200 ${
                 reward.claimed
                   ? 'bg-[#5cb85c]/10 border-[#5cb85c] shadow-lg shadow-[#5cb85c]/20'
-                  : index === rewards.currentStreak - 1 && rewards.canClaimToday
+                  : index === rewards.currentStreak && rewards.canClaimToday
                   ? 'bg-[#f0ad4e]/10 border-[#f0ad4e] shadow-lg shadow-[#f0ad4e]/20 animate-pulse'
                   : 'bg-[#1a1a1a] border-[#333] hover:border-[#555]'
               }`}
@@ -226,7 +224,7 @@ export default function DailyRewardsPage() {
               <div className="mb-4">
                 {reward.claimed ? (
                   <CheckCircle className="w-12 h-12 text-[#5cb85c] mx-auto" />
-                ) : index === rewards.currentStreak - 1 && rewards.canClaimToday ? (
+                ) : index === rewards.currentStreak && rewards.canClaimToday ? (
                   <Gift className="w-12 h-12 text-[#f0ad4e] mx-auto animate-bounce" />
                 ) : (
                   <Circle className="w-12 h-12 text-[#555] mx-auto" />
@@ -248,7 +246,7 @@ export default function DailyRewardsPage() {
               <div className="text-xs">
                 {reward.claimed ? (
                   <span className="text-[#5cb85c] font-medium">Claimed</span>
-                ) : index === rewards.currentStreak - 1 && rewards.canClaimToday ? (
+                ) : index === rewards.currentStreak && rewards.canClaimToday ? (
                   <span className="text-[#f0ad4e] font-medium animate-pulse">Available Now</span>
                 ) : (
                   <span className="text-[#888]">Locked</span>
