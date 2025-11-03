@@ -1,4 +1,9 @@
-// lib/supabase/client.ts
+/**
+ * Supabase Client (Browser)
+ * 
+ * Used in Client Components for authentication and real-time features
+ */
+
 import { createBrowserClient } from '@supabase/ssr'
 
 export function createClient() {

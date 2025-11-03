@@ -15,7 +15,19 @@
       "Bash(copy middleware.ts proxy.ts)",
       "Bash(taskkill:*)",
       "Bash(npx ts-node:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(if exist .next rmdir /s /q .next)",
+      "Bash(netstat:*)",
+      "Bash(TASKKILL //PID 26284 //F)",
+      "Bash(powershell:*)",
+      "Bash(test:*)",
+      "Bash(cat:*)",
+      "Bash(npx prisma studio)",
+      "Bash(curl:*)",
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(if exist \"app\\create-character\" rmdir /s /q \"app\\create-character\")"
     ],
     "deny": [],
     "ask": []

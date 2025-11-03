@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import { useCharacterStore } from '@/lib/character-store'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Avatar } from '@/components/ui/Avatar'
 import {
   Power,
-  Crown,
   Zap,
   Heart,
   DollarSign,
@@ -43,7 +43,8 @@ import {
   Users,
   Building2,
   Plane,
-  Gamepad2
+  Gamepad2,
+  Code
 } from 'lucide-react'
 
 interface Notification {
@@ -65,12 +66,14 @@ interface DailyReward {
 interface DailyRewardsData {
   currentStreak: number
   maxStreak: number
+  canClaimToday: boolean
   rewards: DailyReward[]
 }
 
 export function TopBar() {
   const { character, isLoading } = useCharacterStore()
   const [username, setUsername] = useState<string>('Player')
+  const [userRole, setUserRole] = useState<string>('USER')
   const supabase = createClient()
   const router = useRouter()
 
@@ -100,6 +103,25 @@ export function TopBar() {
       }
     }
 
+    const fetchUserRole = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        console.log('[TopBar] Fetching role for user:', user?.id)
+        if (user) {
+          const response = await fetch('/api/user/role')
+          console.log('[TopBar] Role API response status:', response.status)
+          if (response.ok) {
+            const data = await response.json()
+            console.log('[TopBar] Role data received:', data)
+            setUserRole(data.role || 'USER')
+            console.log('[TopBar] User role set to:', data.role || 'USER')
+          }
+        }
+      } catch (error) {
+        console.error('[TopBar] Failed to fetch user role:', error)
+      }
+    }
+
     const fetchNotifications = async () => {
       try {
         const response = await fetch('/api/notifications')
@@ -117,7 +139,7 @@ export function TopBar() {
         const response = await fetch('/api/daily-rewards')
         if (response.ok) {
           const data = await response.json()
-          setDailyRewards(data)
+          setDailyRewards(data.rewards)
         }
       } catch (error) {
         console.error('Failed to fetch daily rewards:', error)
@@ -125,6 +147,7 @@ export function TopBar() {
     }
 
     getUsername()
+    fetchUserRole()
     fetchNotifications()
     fetchDailyRewards()
   }, [supabase])
@@ -241,9 +264,12 @@ export function TopBar() {
             <div className="flex items-center gap-3">
               {/* Avatar with Level & Streak */}
               <div className="relative">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#5cb85c] to-[#4a9d4a] flex items-center justify-center border-2 border-[#5cb85c] shadow-lg shadow-[#5cb85c]/20">
-                  <Crown className="w-5 h-5 text-white" />
-                </div>
+                <Avatar
+                  icon={(character as any).avatar || 'men1'}
+                  customUrl={(character as any).customAvatar}
+                  size="md"
+                  className="border-2 border-[#5cb85c] shadow-lg shadow-[#5cb85c]/20"
+                />
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#f0ad4e] border-2 border-[#0f0f0f] flex items-center justify-center">
                   <span className="text-[10px] font-bold text-white">{character.level}</span>
                 </div>
@@ -308,12 +334,15 @@ export function TopBar() {
             <div className="flex items-center gap-2">
               {/* Daily Rewards */}
               <button
+                onClick={() => router.push('/dashboard/daily-rewards')}
                 onMouseEnter={() => setIsHovered('daily')}
                 onMouseLeave={() => setIsHovered(null)}
                 className="relative p-2 bg-[#1a1a1a] border border-[#333] hover:border-[#f0ad4e] hover:bg-[#f0ad4e]/10 transition-all rounded group"
               >
                 <Gift className="w-4 h-4 text-[#f0ad4e] group-hover:scale-110 transition-transform" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#d9534f] rounded-full border border-[#0f0f0f]"></div>
+                {dailyRewards?.canClaimToday && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#d9534f] rounded-full border border-[#0f0f0f]"></div>
+                )}
                 {isHovered === 'daily' && (
                   <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-[#0f0f0f] border border-[#333] rounded px-2 py-1 text-[9px] text-[#fff] whitespace-nowrap z-50">
                     Daily Rewards
@@ -340,6 +369,40 @@ export function TopBar() {
                   </div>
                 )}
               </button>
+
+              {/* Owner Panel - Only for OWNER */}
+              {userRole === 'OWNER' && (
+                <button
+                  onClick={() => router.push('/dashboard/owner')}
+                  onMouseEnter={() => setIsHovered('owner')}
+                  onMouseLeave={() => setIsHovered(null)}
+                  className="p-2 bg-[#1a1a1a] border border-[#333] hover:border-[#9b59b6] hover:bg-[#9b59b6]/10 transition-all rounded group"
+                >
+                  <Code className="w-4 h-4 text-[#9b59b6] group-hover:scale-110 transition-transform" />
+                  {isHovered === 'owner' && (
+                    <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-[#0f0f0f] border border-[#333] rounded px-2 py-1 text-[9px] text-[#fff] whitespace-nowrap z-50">
+                      💎 Owner Panel
+                    </div>
+                  )}
+                </button>
+              )}
+
+              {/* Admin Panel - Only for ADMIN and MODERATOR */}
+              {(userRole === 'ADMIN' || userRole === 'MODERATOR') && (
+                <button
+                  onClick={() => router.push('/dashboard/admin')}
+                  onMouseEnter={() => setIsHovered('admin')}
+                  onMouseLeave={() => setIsHovered(null)}
+                  className="p-2 bg-[#1a1a1a] border border-[#333] hover:border-[#d9534f] hover:bg-[#d9534f]/10 transition-all rounded group"
+                >
+                  <Shield className="w-4 h-4 text-[#d9534f] group-hover:scale-110 transition-transform" />
+                  {isHovered === 'admin' && (
+                    <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-[#0f0f0f] border border-[#333] rounded px-2 py-1 text-[9px] text-[#fff] whitespace-nowrap z-50">
+                      Admin Panel
+                    </div>
+                  )}
+                </button>
+              )}
 
               {/* Settings */}
               <button
@@ -560,12 +623,23 @@ export function TopBar() {
 
               <button
                 onClick={() => {
-                  router.push('/dashboard/leaderboard')
+                  router.push('/dashboard/gym')
                   setShowQuickNav(false)
                 }}
                 className="flex flex-col items-center gap-2 p-3 bg-[#1a1a1a] hover:bg-[#d9534f]/10 border border-[#333] hover:border-[#d9534f] rounded transition-all group"
               >
-                <BarChart3 className="w-5 h-5 text-[#d9534f] group-hover:scale-110 transition-transform" />
+                <Activity className="w-5 h-5 text-[#d9534f] group-hover:scale-110 transition-transform" />
+                <span className="text-[9px] text-[#fff] font-medium">Gym</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  router.push('/dashboard/leaderboard')
+                  setShowQuickNav(false)
+                }}
+                className="flex flex-col items-center gap-2 p-3 bg-[#1a1a1a] hover:bg-[#f0ad4e]/10 border border-[#333] hover:border-[#f0ad4e] rounded transition-all group"
+              >
+                <BarChart3 className="w-5 h-5 text-[#f0ad4e] group-hover:scale-110 transition-transform" />
                 <span className="text-[9px] text-[#fff] font-medium">Leaderboard</span>
               </button>
 
@@ -579,6 +653,34 @@ export function TopBar() {
                 <User className="w-5 h-5 text-[#888] group-hover:scale-110 transition-transform" />
                 <span className="text-[9px] text-[#fff] font-medium">Profile</span>
               </button>
+
+              {/* Owner Panel - Only for OWNER */}
+              {userRole === 'OWNER' && (
+                <button
+                  onClick={() => {
+                    router.push('/dashboard/owner')
+                    setShowQuickNav(false)
+                  }}
+                  className="flex flex-col items-center gap-2 p-3 bg-[#1a1a1a] hover:bg-[#9b59b6]/10 border border-[#333] hover:border-[#9b59b6] rounded transition-all group"
+                >
+                  <Code className="w-5 h-5 text-[#9b59b6] group-hover:scale-110 transition-transform" />
+                  <span className="text-[9px] text-[#fff] font-medium">💎 Owner</span>
+                </button>
+              )}
+
+              {/* Admin Panel - Only for ADMIN and MODERATOR */}
+              {(userRole === 'ADMIN' || userRole === 'MODERATOR') && (
+                <button
+                  onClick={() => {
+                    router.push('/dashboard/admin')
+                    setShowQuickNav(false)
+                  }}
+                  className="flex flex-col items-center gap-2 p-3 bg-[#1a1a1a] hover:bg-[#d9534f]/10 border border-[#333] hover:border-[#d9534f] rounded transition-all group"
+                >
+                  <Shield className="w-5 h-5 text-[#d9534f] group-hover:scale-110 transition-transform" />
+                  <span className="text-[9px] text-[#fff] font-medium">Admin</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

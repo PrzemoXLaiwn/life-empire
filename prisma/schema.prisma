@@ -42,6 +42,14 @@ enum CrimeTier {
   EXTREME
 }
 
+enum UserRole {
+  USER
+  VIP
+  MODERATOR
+  ADMIN
+  OWNER
+}
+
 enum DistrictType {
   DOWNTOWN
   BUSINESS
@@ -194,6 +202,11 @@ enum ReportPriority {
 model User {
   id        String    @id
   email     String    @unique
+  role      UserRole  @default(USER)
+  banned    Boolean   @default(false)
+  bannedAt  DateTime?
+  bannedBy  String?
+  banReason String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   character Character?
@@ -205,6 +218,7 @@ model Character {
   id       String @id @default(cuid())
   userId   String @unique
   username String @unique
+  gender   String @default("male") // male, female, other
 
   // Basic info
   level      Int @default(1)
@@ -235,6 +249,11 @@ model Character {
   intelligence Int @default(10)
   charisma     Int @default(10)
   stamina      Int @default(10)
+
+  // Physical Stats - Gym Training (0-100)
+  endurance Int @default(10)
+  speed     Int @default(10)
+  agility   Int @default(10)
 
   // Criminal Skills (0-100)
   shooting    Int @default(0)
@@ -1104,43 +1123,15 @@ model Report {
 
 model DailyReward {
   id          String   @id @default(cuid())
-  characterId String
+  characterId String   @map("character_id")
   day         Int
-  claimedAt   DateTime @default(now())
-
+  claimedAt   DateTime @default(now())  // ← BEZ @map!
+  
   character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
-
+  
   @@unique([characterId, day])
   @@index([characterId])
   @@map("daily_rewards")
 }
 
-// ========================================
-// LEGACY MODELS
-// ========================================
 
-model GameEvent {
-  id        String   @id @default(cuid())
-  type      String
-  message   String
-  userId    String?
-  createdAt DateTime @default(now())
-  username  String?
-  avatar    String?
-
-  @@index([createdAt])
-  @@index([userId])
-  @@map("game_events")
-}
-
-model ChatMessage {
-  id        String   @id @default(cuid())
-  userId    String
-  username  String
-  message   String
-  createdAt DateTime @default(now())
-  avatar    String?  @default("crown")
-
-  @@index([createdAt])
-  @@map("chat_messages")
-}

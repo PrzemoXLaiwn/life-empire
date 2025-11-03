@@ -1,4 +1,9 @@
-// lib/supabase/server.ts
+/**
+ * Supabase Client (Server)
+ * 
+ * Used in Server Components and API Routes with proper cookie handling
+ */
+
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -19,7 +24,9 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Server Component
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
           }
         },
       },

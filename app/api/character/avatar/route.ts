@@ -17,7 +17,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Avatar required' }, { status: 400 })
     }
 
-    const validAvatars = ['crown', 'skull', 'fire', 'star', 'diamond', 'rocket', 'robot', 'ninja', 'pirate', 'alien']
+    // Valid character avatars
+    const validAvatars = ['men1', 'men2', 'men3', 'men4', 'women1', 'women2', 'women3', 'women4', 'custom']
     if (!validAvatars.includes(avatar)) {
       return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })
     }

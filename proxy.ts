@@ -15,8 +15,8 @@ const protectedPaths = [
 const protectedApiPaths = [
   '/api/character',
   '/api/crime',
-  '/api/chat',
-  '/api/cities'
+  '/api/chat'
+  // '/api/cities' removed - needed for registration flow
 ]
 
 export async function proxy(request: NextRequest) {

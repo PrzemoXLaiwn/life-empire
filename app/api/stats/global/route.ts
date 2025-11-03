@@ -31,7 +31,7 @@ export async function GET() {
         }
       }),
 
-      // Total businesses ✅ UPROSZCZONE - bez where
+      // Total businesses
       prisma.business.count(),
 
       // Total gangs

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useCharacterStore } from '@/lib/character-store'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { LeaderboardPlayer, DailyMission, ActivityItem, DailyRewards } from '@/lib/types'
+import { LeaderboardPlayer, DailyMission, ActivityItem } from '@/lib/types'
 import {
   Trophy,
   Zap,
@@ -89,13 +89,11 @@ export default function DashboardPage() {
     activity: true,
     topPlayers: true,
     achievements: true,
-    dailyRewards: true,
   })
 
   const [dailyMissions, setDailyMissions] = useState<DailyMission[]>([])
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardPlayer[]>([])
-  const [dailyRewards, setDailyRewards] = useState<DailyRewards | null>(null)
 
   const supabase = createClient()
 
@@ -115,11 +113,10 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      const [missionsRes, activityRes, leaderboardRes, rewardsRes] = await Promise.all([
+      const [missionsRes, activityRes, leaderboardRes] = await Promise.all([
         fetch('/api/daily-missions'),
         fetch('/api/activity'),
-        fetch('/api/leaderboard'),
-        fetch('/api/daily-rewards')
+        fetch('/api/leaderboard')
       ])
 
       if (missionsRes.ok) {
@@ -135,11 +132,6 @@ export default function DashboardPage() {
       if (leaderboardRes.ok) {
         const data = await leaderboardRes.json()
         setLeaderboard(data.leaderboard)
-      }
-
-      if (rewardsRes.ok) {
-        const data = await rewardsRes.json()
-        setDailyRewards(data.rewards)
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
@@ -468,80 +460,40 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Bottom Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Top Players */}
-        {visibleWidgets.topPlayers && (
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#333] flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-[#f0ad4e]" />
-              <h2 className="text-sm font-bold text-[#fff]">Top Players</h2>
-            </div>
-            <div className="p-4 space-y-2">
-              {leaderboard.slice(0, 5).map((player) => (
-                <div
-                  key={player.id}
-                  className="flex items-center gap-3 p-2 bg-[#0f0f0f] border border-[#333] rounded hover:border-[#f0ad4e] transition-all"
-                >
-                  <div className="flex items-center justify-center w-6 h-6 bg-[#f0ad4e] text-[#fff] text-xs font-bold rounded-full">
-                    {player.rank}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-[#fff]">{player.username}</p>
-                    <p className="text-[10px] text-[#666]">Level {player.level} • ${player.cash.toLocaleString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-[#f0ad4e]">{player.reputation}</p>
-                    <p className="text-[10px] text-[#666]">Rep</p>
-                  </div>
-                </div>
-              ))}
-              <Link href="/dashboard/leaderboard" className="block mt-3">
-                <button className="w-full px-4 py-2 bg-[#f0ad4e] hover:bg-[#ec971f] text-[#fff] text-xs font-bold uppercase tracking-wider rounded transition-colors">
-                  View Full Leaderboard
-                </button>
-              </Link>
-            </div>
+      {/* Top Players */}
+      {visibleWidgets.topPlayers && (
+        <div className="bg-[#1a1a1a] border border-[#333] rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#333] flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-[#f0ad4e]" />
+            <h2 className="text-sm font-bold text-[#fff]">Top Players</h2>
           </div>
-        )}
-
-        {/* Daily Rewards */}
-        {visibleWidgets.dailyRewards && (
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#333] flex items-center gap-2">
-              <Gift className="w-4 h-4 text-[#5cb85c]" />
-              <h2 className="text-sm font-bold text-[#fff]">Daily Rewards</h2>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                  <div
-                    key={day}
-                    className={`aspect-square rounded-lg border-2 flex items-center justify-center ${
-                      day <= 7
-                        ? 'bg-[#5cb85c]/10 border-[#5cb85c] text-[#5cb85c]'
-                        : 'bg-[#0f0f0f] border-[#333] text-[#666]'
-                    }`}
-                  >
-                    {day <= 7 ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : (
-                      <span className="text-[10px] font-bold">{day}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-[#5cb85c]/10 border border-[#5cb85c] rounded-lg">
-                <Flame className="w-5 h-5 text-[#f0ad4e]" />
-                <div>
-                  <p className="text-xs font-bold text-[#fff]">7 Day Streak!</p>
-                  <p className="text-[10px] text-[#888]">Keep it up to unlock exclusive rewards</p>
+          <div className="p-4 space-y-2">
+            {leaderboard.slice(0, 5).map((player) => (
+              <div
+                key={player.id}
+                className="flex items-center gap-3 p-2 bg-[#0f0f0f] border border-[#333] rounded hover:border-[#f0ad4e] transition-all"
+              >
+                <div className="flex items-center justify-center w-6 h-6 bg-[#f0ad4e] text-[#fff] text-xs font-bold rounded-full">
+                  {player.rank}
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-[#fff]">{player.username}</p>
+                  <p className="text-[10px] text-[#666]">Level {player.level} • ${player.cash.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-[#f0ad4e]">{player.reputation}</p>
+                  <p className="text-[10px] text-[#666]">Rep</p>
                 </div>
               </div>
-            </div>
+            ))}
+            <Link href="/dashboard/leaderboard" className="block mt-3">
+              <button className="w-full px-4 py-2 bg-[#f0ad4e] hover:bg-[#ec971f] text-[#fff] text-xs font-bold uppercase tracking-wider rounded transition-colors">
+                View Full Leaderboard
+              </button>
+            </Link>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,5 @@
 'use client'
 
-import { Crown, Skull, Flame, Star, Diamond, Rocket, Bot, Swords, Ship, Users } from 'lucide-react'
 import Image from 'next/image'
 
 interface AvatarProps {
@@ -11,47 +10,74 @@ interface AvatarProps {
 }
 
 export function Avatar({ icon, customUrl, size = 'md', className = '' }: AvatarProps) {
-  const icons: Record<string, any> = {
-    crown: Crown,
-    skull: Skull,
-    fire: Flame,
-    star: Star,
-    diamond: Diamond,
-    rocket: Rocket,
-    robot: Bot,
-    ninja: Swords,
-    pirate: Ship,
-    alien: Users
-  }
-
+  // WYSOKIEJ JAKOŚCI rozmiary - 4x większe dla crisp rendering
   const sizes = {
-    sm: { container: 'w-8 h-8', icon: 'w-4 h-4' },
-    md: { container: 'w-12 h-12', icon: 'w-6 h-6' },
-    lg: { container: 'w-16 h-16', icon: 'w-8 h-8' },
-    xl: { container: 'w-24 h-24', icon: 'w-12 h-12' }
+    sm: 128,  // 4x32
+    md: 192,  // 4x48
+    lg: 256,  // 4x64
+    xl: 384   // 4x96
   }
 
-  // Custom avatar
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+    xl: 'w-24 h-24'
+  }
+
+  // Custom uploaded avatar
   if (icon === 'custom' && customUrl) {
     return (
-      <div className={`${sizes[size].container} rounded-full overflow-hidden border-2 border-[#5cb85c] shadow-lg ${className}`}>
-        <Image 
-          src={customUrl} 
-          alt="Avatar" 
-          width={parseInt(sizes[size].container.split('w-')[1]?.split(' ')[0] || '12') * 4}
-          height={parseInt(sizes[size].container.split('w-')[1]?.split(' ')[0] || '12') * 4}
-          className="w-full h-full object-cover"
+      <div className={`${sizeClasses[size]} rounded-full overflow-hidden border-2 border-[#5cb85c] shadow-lg ${className}`}>
+        <Image
+          src={customUrl}
+          alt="Custom Avatar"
+          width={sizes[size]}
+          height={sizes[size]}
+          className="w-full h-full object-contain scale-90"
+          quality={100}
+          priority
         />
       </div>
     )
   }
 
-  // Icon avatar
-  const Icon = icons[icon] || Crown
+  // Character avatars (men1-4, women1-4) - Z PLIKÓW PNG
+  const characterAvatars = ['men1', 'men2', 'men3', 'men4', 'women1', 'women2', 'women3', 'women4']
+  if (characterAvatars.includes(icon)) {
+    return (
+      <div className={`${sizeClasses[size]} rounded-full overflow-hidden border-2 border-[#5cb85c] shadow-lg ${className}`}>
+        <Image
+          src={`/images/avatars/${icon}.PNG`}
+          alt={icon}
+          width={sizes[size]}
+          height={sizes[size]}
+          className="w-full h-full object-contain scale-90"
+          quality={100}
+          priority
+        />
+      </div>
+    )
+  }
+
+  // Fallback - NAJWYŻSZA JAKOŚĆ DiceBear SVG!
+  // SVG = nieskończona rozdzielczość, zawsze sharp!
+  const pixelSize = sizes[size]
+  const avatarStyle = icon.includes('woman') || icon.includes('female') ? 'avataaars' : 'avataaars'
+  const fallbackUrl = `https://api.dicebear.com/9.x/${avatarStyle}/svg?seed=${icon}&backgroundColor=transparent&radius=50&size=${pixelSize}&scale=90`
 
   return (
-    <div className={`${sizes[size].container} rounded-full bg-gradient-to-br from-[#5cb85c] to-[#4a9d4a] flex items-center justify-center border-2 border-[#5cb85c] shadow-lg ${className}`}>
-      <Icon className={`${sizes[size].icon} text-white`} />
+    <div className={`${sizeClasses[size]} rounded-full overflow-hidden border-2 border-[#5cb85c] shadow-lg bg-gradient-to-br from-[#5cb85c]/20 to-[#4a9d4a]/20 flex items-center justify-center ${className}`}>
+      <Image
+        src={fallbackUrl}
+        alt="Avatar"
+        width={sizes[size]}
+        height={sizes[size]}
+        className="w-full h-full object-contain"
+        quality={100}
+        priority
+        unoptimized // SVG doesn't need optimization
+      />
     </div>
   )
 }

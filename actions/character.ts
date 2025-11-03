@@ -29,6 +29,20 @@ export async function createCharacter(formData: CharacterCreationForm): Promise<
       return { success: false, error: 'Not authenticated' };
     }
 
+    // Ensure user exists in Prisma database
+    let prismaUser = await prisma.user.findUnique({
+      where: { id: user.id },
+    });
+
+    if (!prismaUser) {
+      prismaUser = await prisma.user.create({
+        data: {
+          id: user.id,
+          email: user.email || '',
+        },
+      });
+    }
+
     // Validate input
     if (!formData.username || formData.username.length < 3 || formData.username.length > 20) {
       return { success: false, error: 'Username must be 3-20 characters' };
