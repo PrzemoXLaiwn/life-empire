@@ -14,7 +14,7 @@ import {
 } from '@/lib/gym/scoring'
 
 export default function YogaPage() {
-  const { character, fetchCharacter } = useCharacterStore()
+  const { character, fetchCharacter, updateCharacter } = useCharacterStore()
   const router = useRouter()
 
   type BreathPhase = 'inhale' | 'hold' | 'exhale' | 'rest'
@@ -30,10 +30,11 @@ export default function YogaPage() {
   const [statGain, setStatGain] = useState(0)
   const [score, setScore] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isNewRecord, setIsNewRecord] = useState(false)
 
   const energyCost = getEnergyCost('yoga')
 
-  const gameLoopRef = useRef<NodeJS.Timeout>()
+  const gameLoopRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Breath cycle durations (in seconds)
   const phaseDurations = {
@@ -74,7 +75,6 @@ export default function YogaPage() {
 
     gameLoopRef.current = setInterval(() => {
       setPhaseProgress(prev => {
-        const newProgress = prev + 0.1
         const phase = currentPhaseRef.current
         const currentDuration = phaseDurations[phase]
 
@@ -82,10 +82,16 @@ export default function YogaPage() {
         const shouldBeHolding = phase === 'inhale' || phase === 'hold'
         const correctAction = isHolding === shouldBeHolding
 
+        let newProgress = prev
+
+        // Only progress if player is doing the correct action!
         if (correctAction) {
+          newProgress = prev + 0.1
           setScore(s => s + 5) // Reward for correct action
           scoreRef.current += 5
         } else {
+          // Penalty - stay at same progress or regress slightly
+          newProgress = Math.max(0, prev - 0.05)
           setScore(s => Math.max(0, s - 2)) // Penalty for wrong action
           scoreRef.current = Math.max(0, scoreRef.current - 2)
         }
@@ -110,8 +116,9 @@ export default function YogaPage() {
               if (gameLoopRef.current) clearInterval(gameLoopRef.current)
 
               // Calculate performance
-              const finalScore = scoreRef.current + 50
-              const maxScore = targetCycles * 14 * 10 * 5 // 5 cycles × 14s × 10 checks/s × 5 points
+              // Max score is theoretical perfect (all correct actions)
+              const maxScore = 3500 // 5 cycles × 14s × 10 checks/s × 5 points
+              const finalScore = Math.min(scoreRef.current, maxScore) // Cap at max
               const result = calculateWorkoutResult(
                 'yoga',
                 finalScore,
@@ -178,7 +185,11 @@ export default function YogaPage() {
       })
 
       if (response.ok) {
-        await fetchCharacter()
+        const data = await response.json()
+        if (data.character) {
+          updateCharacter(data.character)
+          setIsNewRecord(data.isNewRecord || false)
+        }
       }
     } catch (error) {
       console.error('Failed to save workout:', error)
@@ -229,6 +240,18 @@ export default function YogaPage() {
                 Follow the breathing pattern for {targetCycles} complete cycles!<br />
                 Inhale (hold) → Hold (keep holding) → Exhale (release) → Rest (stay released)
               </p>
+
+              {/* Best Score Display */}
+              {((character as any).gymBestScores?.yoga) && (
+                <div className="mb-4 p-3 bg-[#0f0f0f] border border-[#5bc0de] rounded-lg inline-block">
+                  <p className="text-xs text-[#888] uppercase">Your Best Score</p>
+                  <p className="text-2xl font-bold text-[#5bc0de]">
+                    {(character as any).gymBestScores.yoga}
+                  </p>
+                  <p className="text-[10px] text-[#666]">Beat your record!</p>
+                </div>
+              )}
+
               <button
                 onClick={startGame}
                 className="px-8 py-3 bg-[#5bc0de] hover:bg-[#46b8da] text-white font-bold rounded-lg transition-colors"
@@ -316,6 +339,14 @@ export default function YogaPage() {
 
           {gameState === 'success' && (
             <div className="text-center">
+              {/* NEW RECORD Banner */}
+              {isNewRecord && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-[#f39c12] via-[#f1c40f] to-[#f39c12] rounded-lg animate-pulse">
+                  <p className="text-2xl font-bold text-white">🏆 NEW RECORD! 🏆</p>
+                  <p className="text-sm text-white/90">You beat your previous best!</p>
+                </div>
+              )}
+
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
                 style={{ backgroundColor: getRatingColor(rating) }}

@@ -44,7 +44,7 @@ export async function getPlayerStats(characterId: string) {
     })
 
     const totalJobs = jobHistory.length
-    const totalHoursWorked = jobHistory.reduce((sum, j) => sum + j.hoursWorked, 0)
+    const totalHoursWorked = character.totalWorkHours // Use new tracking field
     const totalJobEarnings = jobHistory.reduce((sum, j) => sum + j.totalPay, 0)
     const longestShift = Math.max(...jobHistory.map(j => j.hoursWorked), 0)
 

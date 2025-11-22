@@ -71,8 +71,8 @@ export default function RegisterPage() {
 
       console.log('✅ User record created')
 
-      // Redirect to /registermore to complete character setup
-      router.push('/registermore')
+      // Redirect to /create-character to complete character setup
+      router.push('/create-character')
     } catch (error: any) {
       console.error('Registration error:', error)
       setError(error.message || 'Failed to create account')

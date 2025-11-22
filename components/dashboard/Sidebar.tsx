@@ -51,7 +51,11 @@ import {
   Minimize2,
   Heart,
   TrendingUp as TrendUp,
-  Activity
+  Activity,
+  ClipboardCheck,
+  UserCog,
+  Wallet,
+  Zap as Lightning
 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { useCharacterStore } from '@/lib/character-store'
@@ -154,7 +158,7 @@ export function Sidebar() {
     {
       title: 'CAREER',
       items: [
-        { icon: Briefcase, label: 'Jobs', href: '/dashboard/jobs' },
+        { icon: Briefcase, label: 'Career Center', href: '/dashboard/career' },
         { icon: GraduationCap, label: 'Education', href: '/dashboard/education' },
         { icon: Building2, label: 'Properties', href: '/dashboard/properties' },
         { icon: Factory, label: 'Businesses', href: '/dashboard/businesses' },

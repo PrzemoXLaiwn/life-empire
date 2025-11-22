@@ -9,7 +9,7 @@ import { DollarSign, TrendingUp, Heart, Zap, Target, Award, Brain, Users, Lock, 
 export default function OwnerDashboard() {
   const router = useRouter()
   const supabase = createClient()
-  const { character, isLoading: characterLoading, refresh } = useCharacterStore()
+  const { character, isLoading: characterLoading, refreshCharacter } = useCharacterStore()
 
   const [userRole, setUserRole] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -144,7 +144,7 @@ export default function OwnerDashboard() {
       console.log('Stats saved:', data)
 
       // Refresh character data
-      refresh()
+      refreshCharacter()
 
       setSuccessMessage(`✅ Successfully updated ${data.modified.length} stats!`)
       setTimeout(() => setSuccessMessage(''), 3000)

@@ -14,7 +14,7 @@ import {
 } from '@/lib/gym/scoring'
 
 export default function SpeedTrainingPage() {
-  const { character, fetchCharacter } = useCharacterStore()
+  const { character, fetchCharacter, updateCharacter } = useCharacterStore()
   const router = useRouter()
 
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'success'>('ready')
@@ -24,12 +24,17 @@ export default function SpeedTrainingPage() {
   const [statGain, setStatGain] = useState(0)
   const [score, setScore] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isNewRecord, setIsNewRecord] = useState(false)
   const [sliderPosition, setSliderPosition] = useState(50)
   const [targetZone, setTargetZone] = useState(50) // Center of green zone
   const [targetDirection, setTargetDirection] = useState(1) // 1 or -1
-  const timerRef = useRef<NodeJS.Timeout>()
-  const animationRef = useRef<number>()
+  const timerRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const animationRef = useRef<number | undefined>(undefined)
   const lastTimeRef = useRef<number>(0)
+  const isPlayingRef = useRef(false)
+  const scoreRef = useRef(0)
+  const sliderPositionRef = useRef(50)
+  const targetZoneRef = useRef(50)
 
   const energyCost = getEnergyCost('speed-training')
 
@@ -41,10 +46,14 @@ export default function SpeedTrainingPage() {
     }
 
     setGameState('playing')
+    isPlayingRef.current = true
     setTimeLeft(20)
     setScore(0)
+    scoreRef.current = 0
     setSliderPosition(50)
+    sliderPositionRef.current = 50
     setTargetZone(50)
+    targetZoneRef.current = 50
     setTargetDirection(1)
     targetDirectionRef.current = 1
     lastTimeRef.current = performance.now()
@@ -67,15 +76,17 @@ export default function SpeedTrainingPage() {
   const targetDirectionRef = useRef(1)
 
   const animateTarget = () => {
-    const animate = (currentTime: number) => {
-      if (gameState !== 'playing') return
+    lastTimeRef.current = performance.now()
 
-      const deltaTime = currentTime - lastTimeRef.current
+    const animate = (currentTime: number) => {
+      if (!isPlayingRef.current) return
+
+      const deltaTime = (currentTime - lastTimeRef.current) / 16 // Normalize to ~60fps
       lastTimeRef.current = currentTime
 
       // Move target zone
       setTargetZone(prev => {
-        let newPos = prev + (targetDirectionRef.current * deltaTime * 0.05) // Faster movement
+        let newPos = prev + (targetDirectionRef.current * 0.8) // Speed of movement
 
         // Bounce at edges
         if (newPos >= 85) {
@@ -88,8 +99,19 @@ export default function SpeedTrainingPage() {
           setTargetDirection(1)
         }
 
+        targetZoneRef.current = newPos
         return newPos
       })
+
+      // Check if slider is in zone and award points automatically (10 times per second)
+      const isInZone = Math.abs(sliderPositionRef.current - targetZoneRef.current) <= 15
+      if (isInZone) {
+        scoreRef.current += 2
+        setScore(scoreRef.current)
+      } else {
+        scoreRef.current = Math.max(0, scoreRef.current - 1)
+        setScore(scoreRef.current)
+      }
 
       animationRef.current = requestAnimationFrame(animate)
     }
@@ -98,14 +120,15 @@ export default function SpeedTrainingPage() {
   }
 
   const endGame = () => {
+    isPlayingRef.current = false
     if (timerRef.current) clearInterval(timerRef.current)
     if (animationRef.current) cancelAnimationFrame(animationRef.current)
 
     // Calculate performance - max score if always in zone
-    const maxScore = 20 * 10 * 2 // 20 seconds × 10 checks per second × 2 points
+    const maxScore = 20 * 60 * 2 // 20 seconds × 60 fps × 2 points = 2400 max score
     const result = calculateWorkoutResult(
       'speed-training',
-      score,
+      scoreRef.current,
       maxScore,
       character?.level || 1,
       (character as any)?.speed || 10
@@ -119,19 +142,9 @@ export default function SpeedTrainingPage() {
   }
 
   const handleSliderChange = (newValue: number) => {
-    if (gameState !== 'playing') return
+    if (!isPlayingRef.current) return
     setSliderPosition(newValue)
-
-    // Check if slider is in green zone (±15 units from target)
-    const isInZone = Math.abs(newValue - targetZone) <= 15
-
-    if (isInZone) {
-      // In zone! Add points continuously
-      setScore(prev => prev + 2) // 2 points per update in zone
-    } else {
-      // Outside zone! Lose points
-      setScore(prev => Math.max(0, prev - 1))
-    }
+    sliderPositionRef.current = newValue
   }
 
   // Cleanup
@@ -162,7 +175,11 @@ export default function SpeedTrainingPage() {
       })
 
       if (response.ok) {
-        await fetchCharacter()
+        const data = await response.json()
+        if (data.character) {
+          updateCharacter(data.character)
+          setIsNewRecord(data.isNewRecord || false)
+        }
       }
     } catch (error) {
       console.error('Failed to save workout:', error)
@@ -213,6 +230,18 @@ export default function SpeedTrainingPage() {
                 Keep your slider in the moving green zone for 20 seconds!<br />
                 The zone moves - track it with your slider to earn points!
               </p>
+
+              {/* Best Score Display */}
+              {((character as any).gymBestScores?.['speed-training']) && (
+                <div className="mb-4 p-3 bg-[#0f0f0f] border border-[#5cb85c] rounded-lg inline-block">
+                  <p className="text-xs text-[#888] uppercase">Your Best Score</p>
+                  <p className="text-2xl font-bold text-[#5cb85c]">
+                    {(character as any).gymBestScores['speed-training']}
+                  </p>
+                  <p className="text-[10px] text-[#666]">Beat your record!</p>
+                </div>
+              )}
+
               <button
                 onClick={startGame}
                 className="px-8 py-3 bg-[#5cb85c] hover:bg-[#4a9d4a] text-white font-bold rounded-lg transition-colors"
@@ -281,6 +310,14 @@ export default function SpeedTrainingPage() {
 
           {gameState === 'success' && (
             <div className="text-center">
+              {/* NEW RECORD Banner */}
+              {isNewRecord && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-[#f39c12] via-[#f1c40f] to-[#f39c12] rounded-lg animate-pulse">
+                  <p className="text-2xl font-bold text-white">🏆 NEW RECORD! 🏆</p>
+                  <p className="text-sm text-white/90">You beat your previous best!</p>
+                </div>
+              )}
+
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
                 style={{ backgroundColor: getRatingColor(rating) }}

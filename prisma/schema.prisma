@@ -22,6 +22,22 @@ enum JobCategory {
   EXECUTIVE
 }
 
+enum EducationLevel {
+  NONE
+  ELEMENTARY
+  HIGH_SCHOOL
+  UNIVERSITY
+  GRADUATE
+  TRADE_SCHOOL
+}
+
+enum WorkEthic {
+  LAZY
+  STANDARD
+  HARD_WORKER
+  WORKAHOLIC
+}
+
 enum CrimeCategory {
   THEFT
   VEHICLE_THEFT
@@ -268,6 +284,12 @@ model Character {
   accounting  Int @default(0)
   marketing   Int @default(0)
 
+  // Soft Skills (0-100) - Universal skills for career progression
+  communication Int @default(10) // Networking, presentations
+  leadership    Int @default(10) // Team management, decision making
+  creativity    Int @default(10) // Innovation, problem solving
+  timeManagement Int @default(10) @map("time_management") // Efficiency, multitasking
+
   // Status
   reputation  Int   @default(0)
   heatLevel   Float @default(0)
@@ -288,8 +310,35 @@ model Character {
   isPremium    Boolean   @default(false)
   premiumUntil DateTime?
 
-  // Current job
-  currentJobId String?
+  // Education
+  educationLevel    EducationLevel @default(NONE) @map("education_level")
+  university        String?        @map("university") // University name
+  major             String?        @map("major") // University major
+  graduationYear    Int?           @map("graduation_year")
+  highSchoolGPA     Float          @default(0) @map("high_school_gpa") // 0-4.0
+  universityGPA     Float          @default(0) @map("university_gpa") // 0-4.0
+
+  // Employment
+  currentJobId      String?        @map("current_job_id")
+  yearsInJob        Float          @default(0) @map("years_in_job") // Decimal years
+  workEthic         WorkEthic      @default(STANDARD) @map("work_ethic")
+  performanceRating Float          @default(75) @map("performance_rating") // 0-100
+  lastPromotion     DateTime?      @map("last_promotion")
+  lastSalaryReview  DateTime?      @map("last_salary_review")
+  annualSalary      Int            @default(0) @map("annual_salary") // Yearly salary
+  lastPaycheck      DateTime?      @map("last_paycheck")
+
+  // Probation & Bad Reference (CV/Interview System)
+  onProbation                  Boolean   @default(false) @map("on_probation")
+  probationDaysLeft            Int       @default(0) @map("probation_days_left")
+  probationPerformanceRequired Int       @default(75) @map("probation_performance_required")
+  liedOnResume                 Boolean   @default(false) @map("lied_on_resume")
+  badReferenceUntil            DateTime? @map("bad_reference_until")
+  
+  // Grade System (UK-Style)
+  currentGrade              Int   @default(1) @map("current_grade") // 1-4
+  monthsInCurrentPosition   Float @default(0) @map("months_in_current_position")
+  gradeEligibleDate         DateTime? @map("grade_eligible_date")
 
   // Current gang
   gangId String?
@@ -326,9 +375,32 @@ model Character {
   receivedFriends   Friendship[]         @relation("Receiver")
   activityLogs      ActivityLog[]
   notifications     Notification[]
-  submittedReports  Report[]             @relation("ReportSubmitter")
-  receivedReports   Report[]             @relation("ReportTarget")
-  dailyRewards      DailyReward[]
+  submittedReports    Report[]                @relation("ReportSubmitter")
+  receivedReports     Report[]                @relation("ReportTarget")
+  dailyRewards        DailyReward[]
+  educationEnrollments EducationEnrollment[]
+  performanceReviews  PerformanceReview[]
+  workRelationships   WorkRelationship[]
+  sideHustles         SideHustle[]
+  jobBenefits         JobBenefit[]
+  workExpenses        WorkExpense[]
+
+  // Achievement Tracking
+  totalWorkHours    Float    @default(0) @map("total_work_hours") // Total hours worked across all jobs
+  totalHeists       Int      @default(0) @map("total_heists") // Total heists participated in
+  heistsSuccessful  Int      @default(0) @map("heists_successful") // Successful heists
+  daysPlayed        Int      @default(1) @map("days_played") // Days since character creation
+  lastLoginDate     DateTime @default(now()) @map("last_login_date") // Track daily logins
+  loginStreak       Int      @default(1) @map("login_streak") // Consecutive login days
+
+  // Gym Stats & Records
+  gymBestScores Json? @default("{}") @map("gym_best_scores") // { treadmill: 2850, benchPress: 2700, ... }
+  gymAchievements String[] @default([]) @map("gym_achievements") // Array of achievement IDs
+  totalWorkouts Int @default(0) @map("total_workouts")
+  perfectWorkouts Int @default(0) @map("perfect_workouts")
+
+  // Social/Friend Comparisons
+  friendIds String[] @default([]) @map("friend_ids") // Array of friend user IDs
 
   @@index([userId])
   @@index([username])
@@ -400,6 +472,67 @@ model District {
 }
 
 // ========================================
+// EDUCATION MODELS
+// ========================================
+
+model Education {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  type        EducationLevel
+  major       String?
+
+  // Requirements
+  requiredLevel     Int            @default(0) @map("required_level")
+  requiredEducation EducationLevel @default(NONE) @map("required_education")
+  requiredGPA       Float          @default(0) @map("required_gpa")
+  requiredInt       Int            @default(0) @map("required_int")
+
+  // Cost & Duration
+  tuitionCost   Int @default(0) @map("tuition_cost")
+  durationYears Int @default(4) @map("duration_years")
+
+  // Benefits
+  intelligenceGain Int  @default(0) @map("intelligence_gain")
+  charismaGain     Int  @default(0) @map("charisma_gain")
+  skillGains       Json @default("{}") @map("skill_gains")
+
+  // Meta
+  description String
+  isAvailable Boolean @default(true) @map("is_available")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  enrollments EducationEnrollment[]
+
+  @@index([type])
+  @@map("education")
+}
+
+model EducationEnrollment {
+  id          String @id @default(cuid())
+  characterId String @map("character_id")
+  educationId String @map("education_id")
+
+  enrolledAt   DateTime  @default(now()) @map("enrolled_at")
+  graduatedAt  DateTime? @map("graduated_at")
+  droppedOut   Boolean   @default(false) @map("dropped_out")
+  droppedOutAt DateTime? @map("dropped_out_at")
+
+  currentYear   Int    @default(1) @map("current_year")
+  gpa           Float  @default(3.0)
+  studyEthic    String @default("STANDARD") @map("study_ethic")
+  totalCostPaid Int    @default(0) @map("total_cost_paid")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  education Education @relation(fields: [educationId], references: [id])
+
+  @@index([characterId])
+  @@index([educationId])
+  @@map("education_enrollments")
+}
+
+// ========================================
 // JOB MODELS
 // ========================================
 
@@ -409,33 +542,46 @@ model Job {
   category    JobCategory
   description String
 
-  requiredLevel  Int  @default(0)
-  requiredSkills Json @default("{}")
+  // Requirements
+  requiredLevel     Int            @default(0) @map("requiredLevel")
+  requiredEducation EducationLevel @default(NONE) @map("required_education")
+  requiredMajor     String?        @map("required_major")
+  requiredSchool    String?        @map("required_school")
+  requiredSkills    Json           @default("{}") @map("requiredSkills")
+  requiredStats     Json           @default("{}") @map("required_stats")
 
-  hourlyRate Int
+  // Compensation (YEARLY)
+  annualSalary    Int  @map("annual_salary")
+  bonusPercentage Int  @default(0) @map("bonus_percentage")
+  hourlyRate      Int? @map("hourlyRate") // LEGACY - not used anymore
 
-  shiftDurations     Json @default("[4, 8, 12]")
-  energyCostPerHour  Int  @default(10)
-  stressCostPerHour  Int  @default(5)
-  experiencePerHour  Int  @default(10)
-  skillGains         Json @default("{}")
+  // Work details
+  energyPerWork     Int  @default(20) @map("energy_per_work")
+  stressPerWork     Int  @default(5) @map("stress_per_work")
+  experiencePerWork Int  @default(10) @map("experience_per_work")
+  skillGains        Json @default("{}") @map("skillGains")
 
-  injuryRisk  Float @default(0)
-  stressLevel Int   @default(5)
+  injuryRisk  Float @default(0) @map("injuryRisk")
+  stressLevel Int   @default(5) @map("stressLevel")
 
-  nextJobId      String?
-  promotionLevel Int?
+  // Progression
+  nextJobId         String? @map("nextJobId")
+  yearsForPromotion Float   @default(2) @map("years_for_promotion")
+  minPerformance    Float   @default(70) @map("min_performance")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("createdAt")
+  updatedAt DateTime @updatedAt @map("updatedAt")
 
   nextJob          Job?          @relation("JobProgression", fields: [nextJobId], references: [id])
   previousJobs     Job[]         @relation("JobProgression")
   currentEmployees Character[]   @relation("CurrentJob")
   jobHistory       JobHistory[]
+  performanceReviews PerformanceReview[]
+  jobBenefits      JobBenefit[]
 
   @@index([category])
   @@index([requiredLevel])
+  @@index([requiredEducation])
   @@map("jobs")
 }
 
@@ -444,12 +590,21 @@ model JobHistory {
   characterId String
   jobId       String
 
-  hoursWorked      Float @default(0)
-  totalPay         Int   @default(0)
-  experienceGained Int   @default(0)
+  // Legacy fields (for old shift system)
+  hoursWorked      Float    @default(0)
+  totalPay         Int      @default(0)
+  experienceGained Int      @default(0)
+  startedAt        DateTime @default(now())
+  completedAt      DateTime?
 
-  startedAt   DateTime
-  completedAt DateTime?
+  // New fields (BitLife-style)
+  jobTitle          String?   @map("job_title")
+  yearsWorked       Float     @default(0) @map("years_worked")
+  avgPerformance    Float     @default(0) @map("avg_performance") // Average performance rating
+  totalEarnings     Int       @default(0) @map("total_earnings")
+  promotionsEarned  Int       @default(0) @map("promotions_earned")
+  reasonLeft        String?   @map("reason_left") // "Quit", "Fired", "Promoted"
+  leftAt            DateTime? @map("left_at")
 
   character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
   job       Job       @relation(fields: [jobId], references: [id])
@@ -458,6 +613,184 @@ model JobHistory {
   @@index([jobId])
   @@index([startedAt])
   @@map("job_history")
+}
+
+// Performance Reviews - Quarterly evaluations
+model PerformanceReview {
+  id          String   @id @default(cuid())
+  characterId String   @map("character_id")
+  jobId       String   @map("job_id")
+
+  // Review Details
+  reviewDate    DateTime @default(now()) @map("review_date")
+  quarter       Int      // 1-4
+  year          Int
+
+  // Ratings (0-100)
+  productivityRating  Int @map("productivity_rating")
+  qualityRating       Int @map("quality_rating")
+  teamworkRating      Int @map("teamwork_rating")
+  punctualityRating   Int @map("punctuality_rating")
+  overallRating       Int @map("overall_rating") // Average of above
+
+  // Manager Feedback
+  managerNotes    String? @db.Text @map("manager_notes")
+  strengths       String? @db.Text // Bullet points of strengths
+  improvements    String? @db.Text // Areas to improve
+
+  // Outcomes
+  salaryIncrease  Int     @default(0) @map("salary_increase") // Dollar amount
+  bonusAwarded    Int     @default(0) @map("bonus_awarded")
+  promoted        Boolean @default(false)
+  warning         Boolean @default(false) // Performance warning
+
+  // Relations
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  job       Job       @relation(fields: [jobId], references: [id])
+
+  @@index([characterId])
+  @@index([jobId])
+  @@index([reviewDate])
+  @@map("performance_reviews")
+}
+
+// Work Relationships - Coworkers, bosses, mentors
+model WorkRelationship {
+  id          String @id @default(cuid())
+  characterId String @map("character_id")
+
+  // Relationship Details
+  name         String // NPC name
+  role         String // "Coworker", "Manager", "Mentor", "Subordinate"
+  department   String?
+
+  // Relationship Quality (-100 to 100)
+  relationshipScore Int @default(0) @map("relationship_score")
+
+  // Attributes
+  influence       Int @default(50) // How influential they are (0-100)
+  helpfulness     Int @default(50) // How helpful they are (0-100)
+  competitiveness Int @default(50) // How competitive they are (0-100)
+
+  // Interaction History
+  lastInteraction  DateTime? @map("last_interaction")
+  totalInteractions Int      @default(0) @map("total_interactions")
+
+  // Benefits
+  canMentor        Boolean @default(false) @map("can_mentor") // Can provide skill training
+  canRecommend     Boolean @default(false) @map("can_recommend") // Can recommend for promotion
+  canNetwork       Boolean @default(false) @map("can_network") // Can introduce to other opportunities
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+  metAt    DateTime @default(now()) @map("met_at")
+
+  // Relations
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@index([role])
+  @@map("work_relationships")
+}
+
+// Side Hustles - Freelancing, passive income, side businesses
+model SideHustle {
+  id          String @id @default(cuid())
+  characterId String @map("character_id")
+
+  // Hustle Details
+  name        String
+  type        String // "Freelance", "Passive", "Gig", "Investment"
+  description String
+
+  // Requirements
+  requiredSkill      String? @map("required_skill") // Which skill is needed
+  requiredSkillLevel Int     @default(0) @map("required_skill_level")
+  setupCost          Int     @default(0) @map("setup_cost")
+
+  // Earnings
+  minEarnings Int @map("min_earnings") // Per work session
+  maxEarnings Int @map("max_earnings")
+
+  // Passive Income (if applicable)
+  isPassive         Boolean @default(false) @map("is_passive")
+  passiveIncomeRate Int     @default(0) @map("passive_income_rate") // Per day
+
+  // Work Requirements
+  energyCost       Int @default(10) @map("energy_cost")
+  timeRequirement  Int @default(2) @map("time_requirement") // Hours
+  successRate      Int @default(80) @map("success_rate") // 0-100
+
+  // Status
+  isActive   Boolean  @default(true) @map("is_active")
+  startedAt  DateTime @default(now()) @map("started_at")
+  lastWorked DateTime? @map("last_worked")
+
+  // Stats
+  totalEarned   Int @default(0) @map("total_earned")
+  timesWorked   Int @default(0) @map("times_worked")
+  totalHours    Int @default(0) @map("total_hours")
+
+  // Relations
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@index([type])
+  @@map("side_hustles")
+}
+
+// Job Benefits - Health insurance, car, gym, etc.
+model JobBenefit {
+  id          String @id @default(cuid())
+  characterId String @map("character_id")
+  jobId       String @map("job_id")
+
+  // Benefit Details
+  type        String // "Health Insurance", "Dental", "Vision", "401K", "Company Car", "Gym Membership", "Meal Vouchers", "Transit Pass"
+  name        String
+  description String?
+
+  // Value
+  monthlyValue Int @map("monthly_value") // Dollar value equivalent
+  costToPlayer Int @default(0) @map("cost_to_player") // What player pays monthly
+
+  // Status
+  isActive   Boolean  @default(true) @map("is_active")
+  startedAt  DateTime @default(now()) @map("started_at")
+  endedAt    DateTime? @map("ended_at")
+
+  // Relations
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  job       Job       @relation(fields: [jobId], references: [id])
+
+  @@index([characterId])
+  @@index([jobId])
+  @@map("job_benefits")
+}
+
+// Work Expenses - Commuting, dress code, meals, etc.
+model WorkExpense {
+  id          String   @id @default(cuid())
+  characterId String   @map("character_id")
+
+  // Expense Details
+  type        String   // "Commute", "Parking", "Uniform", "Tools", "Meals", "Dry Cleaning", "Professional Development"
+  description String
+
+  // Cost
+  amount      Int      // Amount paid
+  frequency   String   // "Daily", "Weekly", "Monthly", "One-time"
+
+  // Date
+  paidAt      DateTime @default(now()) @map("paid_at")
+  relatedToJob String? @map("related_to_job") // Job title/ID
+
+  // Relations
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@index([paidAt])
+  @@map("work_expenses")
 }
 
 // ========================================
@@ -1027,6 +1360,20 @@ model Friendship {
   @@map("friendships")
 }
 
+model ChatMessage {
+  id       String @id @default(cuid())
+  userId   String
+  username String
+  avatar   String @default("crown")
+  message  String
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
 // ========================================
 // TRACKING & EVENTS MODELS
 // ========================================
@@ -1063,6 +1410,22 @@ model RandomEvent {
   @@index([isActive])
   @@index([eventType])
   @@map("random_events")
+}
+
+model GameEvent {
+  id       String @id @default(cuid())
+  type     String
+  message  String
+  userId   String?
+  username String?
+  avatar   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("game_events")
 }
 
 model Notification {

@@ -27,7 +27,21 @@
       "Bash(npx prisma studio)",
       "Bash(curl:*)",
       "Bash(timeout /t 10 /nobreak)",
-      "Bash(if exist \"app\\create-character\" rmdir /s /q \"app\\create-character\")"
+      "Bash(if exist \"app\\create-character\" rmdir /s /q \"app\\create-character\")",
+      "Bash(node run-migration.js:*)",
+      "Bash(del run-migration.js)",
+      "Bash(del migration.sql)",
+      "Bash(node run-migration-jobs.js:*)",
+      "Bash(node scripts/seed-careers.js:*)",
+      "Bash($null)",
+      "Bash(node run-education-migration.js:*)",
+      "Bash(del migration-add-education.sql)",
+      "Bash(del run-education-migration.js)",
+      "Bash(node -e:*)",
+      "Bash(node:*)",
+      "Bash(del migration-job-systems.sql)",
+      "Bash(del run-job-systems-migration.js)",
+      "Bash(actions/career.ts)"
     ],
     "deny": [],
     "ask": []

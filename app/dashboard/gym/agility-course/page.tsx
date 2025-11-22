@@ -31,7 +31,7 @@ const DIRECTION_COLORS = {
 }
 
 export default function AgilityCoursePage() {
-  const { character, fetchCharacter } = useCharacterStore()
+  const { character, fetchCharacter, updateCharacter } = useCharacterStore()
   const router = useRouter()
 
   const [gameState, setGameState] = useState<'ready' | 'showing' | 'playing' | 'success'>('ready')
@@ -42,6 +42,7 @@ export default function AgilityCoursePage() {
   const [statGain, setStatGain] = useState(0)
   const [score, setScore] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isNewRecord, setIsNewRecord] = useState(false)
   const [sequence, setSequence] = useState<Direction[]>([])
   const [playerInput, setPlayerInput] = useState<Direction[]>([])
   const [highlightedButton, setHighlightedButton] = useState<Direction | null>(null)
@@ -168,7 +169,11 @@ export default function AgilityCoursePage() {
       })
 
       if (response.ok) {
-        await fetchCharacter()
+        const data = await response.json()
+        if (data.character) {
+          updateCharacter(data.character)
+          setIsNewRecord(data.isNewRecord || false)
+        }
       }
     } catch (error) {
       console.error('Failed to save workout:', error)
@@ -219,6 +224,18 @@ export default function AgilityCoursePage() {
                 Memory game! Watch the sequence and repeat it.<br />
                 Each round adds one more move - complete {targetRounds} rounds!
               </p>
+
+              {/* Best Score Display */}
+              {((character as any).gymBestScores?.['agility-course']) && (
+                <div className="mb-4 p-3 bg-[#0f0f0f] border border-[#9b59b6] rounded-lg inline-block">
+                  <p className="text-xs text-[#888] uppercase">Your Best Score</p>
+                  <p className="text-2xl font-bold text-[#9b59b6]">
+                    {(character as any).gymBestScores['agility-course']}
+                  </p>
+                  <p className="text-[10px] text-[#666]">Beat your record!</p>
+                </div>
+              )}
+
               <button
                 onClick={startGame}
                 className="px-8 py-3 bg-[#9b59b6] hover:bg-[#8e44ad] text-white font-bold rounded-lg transition-colors"
@@ -301,6 +318,14 @@ export default function AgilityCoursePage() {
 
           {gameState === 'success' && (
             <div className="text-center">
+              {/* NEW RECORD Banner */}
+              {isNewRecord && (
+                <div className="mb-4 p-3 bg-gradient-to-r from-[#f39c12] via-[#f1c40f] to-[#f39c12] rounded-lg animate-pulse">
+                  <p className="text-2xl font-bold text-white">🏆 NEW RECORD! 🏆</p>
+                  <p className="text-sm text-white/90">You beat your previous best!</p>
+                </div>
+              )}
+
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
                 style={{ backgroundColor: getRatingColor(rating) }}

@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useCharacterStore } from '@/lib/character-store';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { TopBar } from '@/components/dashboard/TopBar';
+import { Toaster } from 'react-hot-toast';
 import type { User } from '@supabase/supabase-js';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -116,6 +117,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-[#0f0f0f] overflow-hidden">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#1a1a1a',
+            color: '#fff',
+            border: '1px solid #333',
+          },
+          success: {
+            iconTheme: {
+              primary: '#5cb85c',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#d9534f',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-64 border-r border-[#2a2a2a]">
         <Sidebar />

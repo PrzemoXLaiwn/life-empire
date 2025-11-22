@@ -184,6 +184,34 @@ export async function getCurrentCharacter(): Promise<ApiResponse> {
       return { success: false, error: 'Character not found' };
     }
 
+    // Track daily login and update days played
+    const now = new Date();
+    const lastLogin = new Date(character.lastLoginDate);
+    const hoursSinceLastLogin = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60);
+
+    // If more than 24 hours since last login
+    if (hoursSinceLastLogin >= 24) {
+      const daysSinceLastLogin = Math.floor(hoursSinceLastLogin / 24);
+
+      const updates: any = {
+        daysPlayed: { increment: 1 },
+        lastLoginDate: now,
+      };
+
+      // Update streak (reset if more than 1 day gap)
+      if (daysSinceLastLogin === 1) {
+        updates.loginStreak = { increment: 1 };
+      } else if (daysSinceLastLogin > 1) {
+        updates.loginStreak = 1; // Reset streak
+      }
+
+      // Apply updates
+      await prisma.character.update({
+        where: { id: character.id },
+        data: updates,
+      });
+    }
+
     // Update energy based on time passed
     const updatedCharacter = await updateEnergyRegen(character.id);
 

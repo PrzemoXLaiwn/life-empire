@@ -1,14 +1,15 @@
 'use client';
 
 /**
- * Jobs Page
+ * BitLife-Style Jobs Page
  *
- * Players can:
- * - Browse available jobs
- * - Apply for jobs
- * - Work shifts (4h, 8h, 12h)
- * - View job history
- * - Quit current job
+ * Features:
+ * - Browse available jobs by category
+ * - View salary, requirements, education needs
+ * - Simple "Work" button (no shifts)
+ * - Performance tracking
+ * - Promotion system
+ * - Work ethic selection
  */
 
 import { useEffect, useState } from 'react';
@@ -16,39 +17,44 @@ import { useCharacterStore } from '@/lib/character-store';
 import {
   getAvailableJobs,
   applyForJob,
-  startWorkShift,
-  completeWorkShift,
+  doWork,
   quitJob,
-  getCurrentShiftStatus,
+  changeWorkEthic,
+  requestPromotion,
 } from '@/actions/jobs';
-import { Briefcase, Clock, Zap, TrendingUp, DollarSign, X } from 'lucide-react';
+import { Briefcase, DollarSign, TrendingUp, X, Star } from 'lucide-react';
 import type { Job } from '@prisma/client';
+
+const WORK_ETHICS = [
+  { value: 'LAZY', label: 'Lazy', icon: '😴', desc: 'Minimal effort' },
+  { value: 'STANDARD', label: 'Standard', icon: '😐', desc: 'Normal work' },
+  { value: 'HARD_WORKER', label: 'Hard Worker', icon: '💪', desc: 'High effort' },
+  { value: 'WORKAHOLIC', label: 'Workaholic', icon: '🔥', desc: 'Maximum effort' },
+];
+
+const EDUCATION_LABELS: Record<string, string> = {
+  NONE: 'None',
+  ELEMENTARY: 'Elementary',
+  HIGH_SCHOOL: 'High School',
+  UNIVERSITY: 'University Degree',
+  GRADUATE: 'Graduate Degree',
+  TRADE_SCHOOL: 'Trade School',
+};
 
 export default function JobsPage() {
   const { character, refreshCharacter } = useCharacterStore();
   const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
+  const [currentJob, setCurrentJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentShift, setCurrentShift] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
     if (character) {
       loadJobs();
-      checkShiftStatus();
     }
   }, [character]);
-
-  // Poll for shift completion every 10 seconds
-  useEffect(() => {
-    if (currentShift?.isWorking) {
-      const interval = setInterval(() => {
-        checkShiftStatus();
-      }, 10000);
-
-      return () => clearInterval(interval);
-    }
-  }, [currentShift]);
 
   const loadJobs = async () => {
     if (!character) return;
@@ -58,26 +64,12 @@ export default function JobsPage() {
 
     if (result.success) {
       setAvailableJobs(result.data.available);
+      setCurrentJob(result.data.currentJob);
     } else {
       setError(result.error || 'Failed to load jobs');
     }
 
     setIsLoading(false);
-  };
-
-  const checkShiftStatus = async () => {
-    if (!character) return;
-
-    const result = await getCurrentShiftStatus(character.id);
-
-    if (result.success) {
-      setCurrentShift(result.data);
-
-      // Auto-complete if shift is done
-      if (result.data.isWorking && result.data.isComplete) {
-        handleCompleteShift(result.data.shift.id);
-      }
-    }
   };
 
   const handleApply = async (jobId: string) => {
@@ -97,35 +89,23 @@ export default function JobsPage() {
     }
   };
 
-  const handleStartShift = async (hours: number) => {
+  const handleWork = async () => {
     if (!character) return;
 
     setError(null);
     setSuccess(null);
+    setIsWorking(true);
 
-    const result = await startWorkShift(character.id, hours);
-
-    if (result.success) {
-      setSuccess(result.message || 'Shift started!');
-      await refreshCharacter();
-      checkShiftStatus();
-    } else {
-      setError(result.error || 'Failed to start shift');
-    }
-  };
-
-  const handleCompleteShift = async (jobHistoryId: string) => {
-    if (!character) return;
-
-    const result = await completeWorkShift(character.id, jobHistoryId);
+    const result = await doWork(character.id);
 
     if (result.success) {
-      setSuccess(result.message || 'Shift completed!');
+      setSuccess(result.message || 'Work completed!');
       await refreshCharacter();
-      setCurrentShift(null);
     } else {
-      setError(result.error || 'Failed to complete shift');
+      setError(result.error || 'Failed to complete work');
     }
+
+    setIsWorking(false);
   };
 
   const handleQuitJob = async () => {
@@ -145,6 +125,37 @@ export default function JobsPage() {
     }
   };
 
+  const handleChangeWorkEthic = async (ethic: any) => {
+    if (!character) return;
+
+    setError(null);
+    const result = await changeWorkEthic(character.id, ethic);
+
+    if (result.success) {
+      setSuccess(result.message || 'Work ethic updated');
+      await refreshCharacter();
+    } else {
+      setError(result.error || 'Failed to change work ethic');
+    }
+  };
+
+  const handleRequestPromotion = async () => {
+    if (!character) return;
+
+    setError(null);
+    setSuccess(null);
+
+    const result = await requestPromotion(character.id);
+
+    if (result.success) {
+      setSuccess(result.message || 'Promotion granted!');
+      await refreshCharacter();
+      loadJobs();
+    } else {
+      setError(result.error || 'Failed to request promotion');
+    }
+  };
+
   if (!character) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -153,7 +164,13 @@ export default function JobsPage() {
     );
   }
 
-  const currentJob = character.currentJob;
+  // Group jobs by category
+  const jobsByCategory = availableJobs.reduce((acc, job) => {
+    const category = job.category || 'OTHER';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(job);
+    return acc;
+  }, {} as Record<string, Job[]>);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -165,7 +182,7 @@ export default function JobsPage() {
         </div>
         <div className="ls-section-content">
           <p className="text-sm text-[#888]">
-            Work legitimate jobs to earn clean money and gain experience
+            Find a legitimate job, earn salary, and climb the career ladder
           </p>
         </div>
       </div>
@@ -183,21 +200,40 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* Current Job & Shift Status */}
+      {/* Current Job */}
       {currentJob && (
         <div className="ls-section">
-          <div className="ls-section-header">Current Employment</div>
-          <div className="ls-section-content">
-            <div className="flex items-start justify-between mb-4">
+          <div className="ls-section-header">Current Job</div>
+          <div className="ls-section-content space-y-4">
+            {/* Job Info */}
+            <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-bold text-[#fff] mb-1">{currentJob.title}</h3>
-                <p className="text-sm text-[#888] mb-2">{currentJob.description}</p>
+                <h3 className="text-xl font-bold text-[#fff] mb-1">{currentJob.title}</h3>
+                <p className="text-sm text-[#888] mb-3">{currentJob.description}</p>
                 <div className="flex items-center gap-4 flex-wrap">
-                  <span className="text-sm text-[#5cb85c]">
-                    <DollarSign className="w-4 h-4 inline" /> ${currentJob.hourlyRate}/hour
+                  <span className="text-sm">
+                    <span className="text-[#888]">Annual Salary:</span>{' '}
+                    <span className="text-[#5cb85c] font-bold">
+                      ${currentJob.annualSalary.toLocaleString()}/year
+                    </span>
                   </span>
-                  <span className="text-sm text-[#f0ad4e]">
-                    <TrendingUp className="w-4 h-4 inline" /> {currentJob.experiencePerHour} XP/hour
+                  <span className="text-sm">
+                    <span className="text-[#888]">Years:</span>{' '}
+                    <span className="text-[#f0ad4e]">{character.yearsInJob.toFixed(1)}</span>
+                  </span>
+                  <span className="text-sm">
+                    <span className="text-[#888]">Performance:</span>{' '}
+                    <span
+                      className={
+                        character.performanceRating >= 80
+                          ? 'text-[#5cb85c]'
+                          : character.performanceRating >= 60
+                          ? 'text-[#f0ad4e]'
+                          : 'text-[#d9534f]'
+                      }
+                    >
+                      {character.performanceRating}%
+                    </span>
                   </span>
                 </div>
               </div>
@@ -207,75 +243,113 @@ export default function JobsPage() {
               </button>
             </div>
 
-            {/* Active Shift */}
-            {currentShift?.isWorking ? (
-              <div className="p-4 bg-[#5cb85c]/10 border border-[#5cb85c]">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-bold text-[#5cb85c]">🟢 SHIFT IN PROGRESS</span>
-                  <span className="text-xs text-[#888]">
-                    {currentShift.shift.hoursWorked}h shift
-                  </span>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-[#1a1a1a] h-2 mb-2">
-                  <div
-                    className="bg-[#5cb85c] h-2 transition-all"
-                    style={{
-                      width: `${Math.min(100, ((Date.now() - new Date(currentShift.shift.startedAt).getTime()) / currentShift.timeRemaining) * 100)}%`,
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#888]">
-                    Expected: ${currentShift.expectedPay.toLocaleString()} + {currentShift.expectedXP} XP
-                  </span>
-                  {currentShift.isComplete ? (
-                    <button
-                      onClick={() => handleCompleteShift(currentShift.shift.id)}
-                      className="ls-btn ls-btn-success text-xs"
-                    >
-                      Complete Shift
-                    </button>
-                  ) : (
-                    <span className="text-[#888]">
-                      {Math.ceil(currentShift.timeRemaining / 60000)} min remaining
-                    </span>
-                  )}
-                </div>
+            {/* Work Ethic Selector */}
+            <div>
+              <div className="ls-info-label mb-2">Work Ethic</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {WORK_ETHICS.map((ethic) => (
+                  <button
+                    key={ethic.value}
+                    onClick={() => handleChangeWorkEthic(ethic.value)}
+                    className={`p-3 border-2 transition-all ${
+                      character.workEthic === ethic.value
+                        ? 'border-[#5cb85c] bg-[#5cb85c]/10'
+                        : 'border-[#333] hover:border-[#555]'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">{ethic.icon}</div>
+                    <div className="text-xs font-bold text-[#fff]">{ethic.label}</div>
+                    <div className="text-xs text-[#888]">{ethic.desc}</div>
+                  </button>
+                ))}
               </div>
-            ) : (
-              // Start New Shift
-              <div>
-                <div className="ls-info-label mb-2">Start New Shift</div>
-                <div className="grid grid-cols-3 gap-3">
-                  {(currentJob.shiftDurations as number[]).map((hours) => {
-                    const energyNeeded = hours * currentJob.energyCostPerHour;
-                    const canAfford = character.energy >= energyNeeded;
+            </div>
 
-                    return (
-                      <button
-                        key={hours}
-                        onClick={() => handleStartShift(hours)}
-                        disabled={!canAfford}
-                        className={`p-4 border-2 transition-all ${
-                          canAfford
-                            ? 'border-[#5cb85c] hover:bg-[#5cb85c]/10 cursor-pointer'
-                            : 'border-[#333] opacity-50 cursor-not-allowed'
-                        }`}
-                      >
-                        <div className="text-2xl font-bold text-[#fff] mb-1">{hours}h</div>
-                        <div className="text-xs text-[#888] space-y-1">
-                          <div>💰 ${(currentJob.hourlyRate * hours).toLocaleString()}</div>
-                          <div>⚡ -{energyNeeded} energy</div>
-                        </div>
-                      </button>
-                    );
-                  })}
+            {/* Work Button */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={handleWork}
+                disabled={isWorking || character.energy < currentJob.energyPerWork}
+                className="ls-btn ls-btn-success p-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isWorking ? (
+                  <span>Working...</span>
+                ) : (
+                  <span>
+                    💼 Work (${Math.floor(currentJob.annualSalary / 365).toLocaleString()}/day)
+                  </span>
+                )}
+              </button>
+
+              {/* Promotion Button */}
+              {currentJob.nextJobId && (
+                <button
+                  onClick={handleRequestPromotion}
+                  disabled={
+                    character.yearsInJob < currentJob.yearsForPromotion ||
+                    character.performanceRating < currentJob.minPerformance
+                  }
+                  className="ls-btn ls-btn-primary p-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Star className="w-5 h-5 inline mr-2" />
+                  Request Promotion
+                </button>
+              )}
+            </div>
+
+            {/* Promotion Requirements */}
+            {currentJob.nextJobId && (
+              <div className="p-4 bg-[#1a1a1a] border border-[#333]">
+                <div className="text-xs text-[#888] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span>Years Required:</span>
+                    <span
+                      className={
+                        character.yearsInJob >= currentJob.yearsForPromotion
+                          ? 'text-[#5cb85c]'
+                          : 'text-[#f0ad4e]'
+                      }
+                    >
+                      {character.yearsInJob.toFixed(1)} / {currentJob.yearsForPromotion}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Performance Required:</span>
+                    <span
+                      className={
+                        character.performanceRating >= currentJob.minPerformance
+                          ? 'text-[#5cb85c]'
+                          : 'text-[#d9534f]'
+                      }
+                    >
+                      {character.performanceRating}% / {currentJob.minPerformance}%
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Work Stats */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="p-3 bg-[#1a1a1a] border border-[#333]">
+                <div className="text-xs text-[#888] mb-1">Energy Cost</div>
+                <div className="text-sm font-bold text-[#f0ad4e]">
+                  {currentJob.energyPerWork} ⚡
+                </div>
+              </div>
+              <div className="p-3 bg-[#1a1a1a] border border-[#333]">
+                <div className="text-xs text-[#888] mb-1">XP per Work</div>
+                <div className="text-sm font-bold text-[#5cb85c]">
+                  {currentJob.experiencePerWork} XP
+                </div>
+              </div>
+              <div className="p-3 bg-[#1a1a1a] border border-[#333]">
+                <div className="text-xs text-[#888] mb-1">Daily Pay</div>
+                <div className="text-sm font-bold text-[#5cb85c]">
+                  ${Math.floor(currentJob.annualSalary / 365).toLocaleString()}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -290,84 +364,117 @@ export default function JobsPage() {
             <div className="text-center py-8 text-[#888]">Loading jobs...</div>
           ) : availableJobs.length === 0 ? (
             <div className="text-center py-8 text-[#888]">
-              No jobs available. Level up or improve your skills to unlock more jobs!
+              <p className="mb-2">No jobs available!</p>
+              <p className="text-xs">
+                Level up or complete education requirements to unlock more jobs.
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {availableJobs.map((job) => {
-                const requiredSkills = job.requiredSkills as Record<string, number>;
-                const hasSkills =
-                  !requiredSkills ||
-                  Object.keys(requiredSkills).length === 0 ||
-                  Object.entries(requiredSkills).every(
-                    ([skill, required]) => (character as any)[skill] >= required
-                  );
+            <div className="space-y-6">
+              {Object.entries(jobsByCategory).map(([category, jobs]) => (
+                <div key={category}>
+                  <h3 className="text-sm font-bold text-[#888] uppercase tracking-wider mb-3">
+                    {category}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {jobs.map((job) => {
+                      const isCurrentJob = currentJob?.id === job.id;
 
-                return (
-                  <div key={job.id} className="p-4 bg-[#1a1a1a] border border-[#333]">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-bold text-[#fff]">{job.title}</h3>
-                        <p className="text-xs text-[#888]">{job.category}</p>
-                      </div>
-                      <span className="px-2 py-1 bg-[#5cb85c]/20 border border-[#5cb85c] text-[#5cb85c] text-xs">
-                        LVL {job.requiredLevel}+
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-[#d0d0d0] mb-3">{job.description}</p>
-
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[#888]">Hourly Rate:</span>
-                        <span className="text-[#5cb85c] font-bold">${job.hourlyRate}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[#888]">XP/Hour:</span>
-                        <span className="text-[#f0ad4e]">{job.experiencePerHour}</span>
-                      </div>
-                      {requiredSkills && Object.keys(requiredSkills).length > 0 && (
-                        <div className="text-xs">
-                          <span className="text-[#888]">Required Skills:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {Object.entries(requiredSkills).map(([skill, required]) => {
-                              const has = (character as any)[skill] >= required;
-                              return (
-                                <span
-                                  key={skill}
-                                  className={`px-2 py-1 ${
-                                    has
-                                      ? 'bg-[#5cb85c]/20 text-[#5cb85c]'
-                                      : 'bg-[#d9534f]/20 text-[#d9534f]'
-                                  }`}
-                                >
-                                  {skill}: {(character as any)[skill]}/{required}
-                                </span>
-                              );
-                            })}
+                      return (
+                        <div
+                          key={job.id}
+                          className={`p-4 border-2 transition-all ${
+                            isCurrentJob
+                              ? 'border-[#5cb85c] bg-[#5cb85c]/5'
+                              : 'border-[#333] bg-[#1a1a1a]'
+                          }`}
+                        >
+                          {/* Job Title */}
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-[#fff] mb-1">{job.title}</h4>
+                              <p className="text-xs text-[#888] line-clamp-2">
+                                {job.description}
+                              </p>
+                            </div>
+                            {isCurrentJob && (
+                              <span className="ml-2 px-2 py-1 bg-[#5cb85c] text-[#000] text-xs font-bold">
+                                CURRENT
+                              </span>
+                            )}
                           </div>
-                        </div>
-                      )}
-                    </div>
 
-                    {currentJob?.id === job.id ? (
-                      <div className="text-center text-xs text-[#5cb85c] py-2 border border-[#5cb85c]">
-                        ✓ CURRENT JOB
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleApply(job.id)}
-                        disabled={!hasSkills || character.level < job.requiredLevel}
-                        className="ls-btn ls-btn-primary w-full text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {!hasSkills || character.level < job.requiredLevel
-                          ? 'NOT QUALIFIED'
-                          : 'APPLY'}
-                      </button>
-                    )}
+                          {/* Salary & XP */}
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-[#888]">
+                                <DollarSign className="w-4 h-4 inline" /> Salary:
+                              </span>
+                              <span className="text-[#5cb85c] font-bold">
+                                ${job.annualSalary.toLocaleString()}/yr
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-[#888]">
+                                <TrendingUp className="w-4 h-4 inline" /> XP:
+                              </span>
+                              <span className="text-[#f0ad4e]">{job.experiencePerWork}/work</span>
+                            </div>
+                          </div>
+
+                          {/* Requirements */}
+                          <div className="space-y-1 mb-3 text-xs">
+                            {job.requiredLevel > 1 && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#888]">Level:</span>
+                                <span
+                                  className={
+                                    character.level >= job.requiredLevel
+                                      ? 'text-[#5cb85c]'
+                                      : 'text-[#d9534f]'
+                                  }
+                                >
+                                  {character.level} / {job.requiredLevel}
+                                </span>
+                              </div>
+                            )}
+                            {job.requiredEducation && job.requiredEducation !== 'NONE' && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#888]">Education:</span>
+                                <span className="text-[#888]">
+                                  {EDUCATION_LABELS[job.requiredEducation]}
+                                </span>
+                              </div>
+                            )}
+                            {job.requiredMajor && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#888]">Major:</span>
+                                <span className="text-[#888]">
+                                  {job.requiredMajor}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Apply Button */}
+                          {isCurrentJob ? (
+                            <div className="text-center text-xs text-[#5cb85c] py-2 border border-[#5cb85c]">
+                              ✓ YOUR CURRENT JOB
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleApply(job.id)}
+                              className="ls-btn ls-btn-primary w-full text-xs"
+                            >
+                              APPLY
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>

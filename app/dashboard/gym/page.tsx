@@ -15,6 +15,7 @@ interface Workout {
   color: string
   energyCost: number
   difficulty: 'easy' | 'medium' | 'hard'
+  maxScore: number
 }
 
 const WORKOUTS: Workout[] = [
@@ -27,7 +28,8 @@ const WORKOUTS: Workout[] = [
     icon: Activity,
     color: '#d9534f',
     energyCost: 20,
-    difficulty: 'medium'
+    difficulty: 'medium',
+    maxScore: 2000
   },
   {
     id: 'treadmill',
@@ -38,7 +40,8 @@ const WORKOUTS: Workout[] = [
     icon: Zap,
     color: '#f0ad4e',
     energyCost: 15,
-    difficulty: 'easy'
+    difficulty: 'easy',
+    maxScore: 3000
   },
   {
     id: 'agility-course',
@@ -49,7 +52,8 @@ const WORKOUTS: Workout[] = [
     icon: Target,
     color: '#9b59b6',
     energyCost: 25,
-    difficulty: 'hard'
+    difficulty: 'hard',
+    maxScore: 5000
   },
   {
     id: 'speed-training',
@@ -60,7 +64,8 @@ const WORKOUTS: Workout[] = [
     icon: Wind,
     color: '#5cb85c',
     energyCost: 20,
-    difficulty: 'medium'
+    difficulty: 'medium',
+    maxScore: 2400
   },
   {
     id: 'yoga',
@@ -71,7 +76,8 @@ const WORKOUTS: Workout[] = [
     icon: Heart,
     color: '#5bc0de',
     energyCost: 10,
-    difficulty: 'easy'
+    difficulty: 'easy',
+    maxScore: 3500
   }
 ]
 
@@ -114,6 +120,33 @@ export default function GymPage() {
           <div className="text-right">
             <p className="text-xs text-[#888]">Your Energy</p>
             <p className="text-2xl font-bold text-[#f0ad4e]">{character.energy}/{character.maxEnergy}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Gym Stats Summary */}
+      <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-6">
+        <h2 className="text-sm font-bold text-[#f0ad4e] uppercase tracking-wider mb-4">Your Gym Stats</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div className="text-center p-3 bg-[#0f0f0f] border border-[#333] rounded">
+            <p className="text-xs text-[#888] mb-1">Total Workouts</p>
+            <p className="text-2xl font-bold text-white">{(character as any).totalWorkouts || 0}</p>
+          </div>
+          <div className="text-center p-3 bg-[#0f0f0f] border border-[#5cb85c] rounded">
+            <p className="text-xs text-[#888] mb-1">Perfect Ratings</p>
+            <p className="text-2xl font-bold text-[#5cb85c]">{(character as any).perfectWorkouts || 0}</p>
+          </div>
+          <div className="text-center p-3 bg-[#0f0f0f] border border-[#333] rounded">
+            <p className="text-xs text-[#888] mb-1">Success Rate</p>
+            <p className="text-2xl font-bold text-[#5bc0de]">
+              {(character as any).totalWorkouts > 0
+                ? Math.round(((character as any).perfectWorkouts / (character as any).totalWorkouts) * 100)
+                : 0}%
+            </p>
+          </div>
+          <div className="text-center p-3 bg-[#0f0f0f] border border-[#333] rounded">
+            <p className="text-xs text-[#888] mb-1">Achievements</p>
+            <p className="text-2xl font-bold text-[#f39c12]">{((character as any).gymAchievements || []).length}</p>
           </div>
         </div>
       </div>
@@ -185,6 +218,32 @@ export default function GymPage() {
                 {/* Info */}
                 <h3 className="text-lg font-bold text-white mb-1">{workout.name}</h3>
                 <p className="text-xs text-[#888] mb-3 min-h-[2.5rem]">{workout.description}</p>
+
+                {/* Rewards Info */}
+                <div className="bg-[#0a0a0a] border border-[#333] rounded p-2 mb-3">
+                  <p className="text-[10px] text-[#888] uppercase font-bold mb-1">Score Requirements</p>
+                  <div className="space-y-0.5 text-[10px]">
+                    <div className="flex justify-between">
+                      <span className="text-[#5cb85c]">PERFECT: {Math.floor(workout.maxScore * 0.9)}+</span>
+                      <span className="text-white font-bold">+2 {workout.statName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#5bc0de]">GOOD: {Math.floor(workout.maxScore * 0.7)}+</span>
+                      <span className="text-white font-bold">+1-2 {workout.statName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#f0ad4e]">POOR: {Math.floor(workout.maxScore * 0.5)}+</span>
+                      <span className="text-white font-bold">+1 {workout.statName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#d9534f]">FAIL: &lt;{Math.floor(workout.maxScore * 0.5)}</span>
+                      <span className="text-white font-bold">+0 {workout.statName}</span>
+                    </div>
+                  </div>
+                  <div className="mt-1 pt-1 border-t border-[#444]">
+                    <p className="text-[9px] text-[#666]">Max Score: {workout.maxScore}</p>
+                  </div>
+                </div>
 
                 {/* Stats */}
                 <div className="flex items-center justify-between pt-3 border-t border-[#333]">
