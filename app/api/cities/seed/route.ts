@@ -9,89 +9,75 @@ export async function POST() {
         name: 'Los Santos',
         country: 'USA',
         description: 'City of angels and crime. High-risk, high-reward opportunities.',
-        incomeBonus: 10,
         crimeBonus: 5,
-        trainingBonus: 0,
-        businessBonus: 0,
-        minLevel: 1,
-        requiresCar: false,
-        requiresPlane: false
+        businessTaxRate: 0.20,
+        policePresence: 60,
+        gangActivity: 70,
+        specializations: ['crime', 'entertainment']
       },
       {
         name: 'Liberty City',
         country: 'USA',
         description: 'East coast powerhouse. Perfect for building business empires.',
-        incomeBonus: 0,
         crimeBonus: 0,
-        trainingBonus: 5,
-        businessBonus: 15,
-        minLevel: 1,
-        requiresCar: false,
-        requiresPlane: false
+        businessTaxRate: 0.25,
+        policePresence: 70,
+        gangActivity: 50,
+        specializations: ['business', 'finance']
       },
       {
         name: 'Vice City',
         country: 'USA',
         description: 'Tropical paradise with underground connections.',
-        incomeBonus: 5,
         crimeBonus: 10,
-        trainingBonus: 5,
-        businessBonus: 5,
-        minLevel: 15,
-        requiresCar: true,  // Wymaga samochodu
-        requiresPlane: false
+        businessTaxRate: 0.18,
+        policePresence: 40,
+        gangActivity: 80,
+        specializations: ['drugs', 'nightlife']
       },
-      
+
       // UK - Requires Plane
       {
         name: 'London',
         country: 'UK',
         description: 'European crime hub. Sophisticated operations.',
-        incomeBonus: 15,
         crimeBonus: 0,
-        trainingBonus: 10,
-        businessBonus: 10,
-        minLevel: 25,
-        requiresCar: false,
-        requiresPlane: true  // Wymaga samolotu
+        businessTaxRate: 0.30,
+        policePresence: 80,
+        gangActivity: 40,
+        specializations: ['finance', 'tech']
       },
       {
         name: 'Manchester',
         country: 'UK',
         description: 'Industrial powerhouse with underground networks.',
-        incomeBonus: 10,
         crimeBonus: 5,
-        trainingBonus: 5,
-        businessBonus: 5,
-        minLevel: 30,
-        requiresCar: true,
-        requiresPlane: true
+        businessTaxRate: 0.22,
+        policePresence: 60,
+        gangActivity: 60,
+        specializations: ['industrial', 'sports']
       },
-      
+
       // Japan - Requires Plane
       {
         name: 'Tokyo',
         country: 'Japan',
         description: 'Yakuza territory. Advanced training and operations.',
-        incomeBonus: 5,
         crimeBonus: 15,
-        trainingBonus: 20,
-        businessBonus: 5,
-        minLevel: 35,
-        requiresCar: false,
-        requiresPlane: true
+        businessTaxRate: 0.28,
+        policePresence: 50,
+        gangActivity: 90,
+        specializations: ['yakuza', 'tech']
       },
       {
         name: 'Osaka',
         country: 'Japan',
         description: 'Commercial hub with tech opportunities.',
-        incomeBonus: 20,
         crimeBonus: 0,
-        trainingBonus: 10,
-        businessBonus: 15,
-        minLevel: 40,
-        requiresCar: true,
-        requiresPlane: true
+        businessTaxRate: 0.26,
+        policePresence: 65,
+        gangActivity: 45,
+        specializations: ['tech', 'commerce']
       }
     ]
 
