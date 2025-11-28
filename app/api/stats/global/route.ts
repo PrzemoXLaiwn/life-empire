@@ -1,8 +1,9 @@
-// app/api/stats/global/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
+  console.log('🔵 GET /api/stats/global - Start');
+  
   try {
     const [
       totalPlayers,
@@ -11,10 +12,7 @@ export async function GET() {
       totalBusinesses,
       totalGangs
     ] = await Promise.all([
-      // Total players
       prisma.character.count(),
-
-      // Online players (active in last 15 minutes)
       prisma.character.count({
         where: {
           lastActive: {
@@ -22,24 +20,20 @@ export async function GET() {
           }
         }
       }),
-
-      // Total wealth (sum of all cash + bank)
       prisma.character.aggregate({
         _sum: {
           cash: true,
           bankBalance: true
         }
       }),
-
-      // Total businesses
       prisma.business.count(),
-
-      // Total gangs
       prisma.gang.count()
     ])
 
     const totalCash = (totalWealth._sum.cash || 0) + (totalWealth._sum.bankBalance || 0)
 
+    console.log('✅ GET /api/stats/global - Success');
+    
     return NextResponse.json({
       success: true,
       data: {
@@ -52,11 +46,12 @@ export async function GET() {
       }
     })
   } catch (error) {
-    console.error('Failed to fetch global stats:', error)
+    console.error('❌ GET /api/stats/global error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to fetch stats',
+        details: error instanceof Error ? error.message : 'Unknown error',
         data: {
           totalPlayers: 0,
           onlinePlayers: 0,

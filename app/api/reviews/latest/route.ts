@@ -1,16 +1,16 @@
-// app/api/reviews/latest/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
+  console.log('🔵 GET /api/reviews/latest - Start');
+  
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '3')
 
-    // ✅ Używamy ActivityLog jako "reviews" - wysokopoziomowi gracze
     const topPlayers = await prisma.character.findMany({
       where: {
-        level: { gte: 50 } // Tylko gracze 50+ level
+        level: { gte: 5 }
       },
       orderBy: [
         { level: 'desc' },
@@ -38,7 +38,6 @@ export async function GET(request: Request) {
       }
     })
 
-    // Generuj "reviews" na podstawie ścieżki gracza
     const reviews = topPlayers.map(player => {
       let careerPath = 'Mixed Path'
       let review = ''
@@ -69,14 +68,20 @@ export async function GET(request: Request) {
       }
     })
 
+    console.log('✅ GET /api/reviews/latest - Found reviews:', reviews.length);
+    
     return NextResponse.json({
       success: true,
       data: reviews
     })
   } catch (error) {
-    console.error('Failed to fetch reviews:', error)
+    console.error('❌ GET /api/reviews/latest error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch reviews' },
+      { 
+        success: false, 
+        error: 'Failed to fetch reviews',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
