@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import prisma from '@/lib/prisma/client'
+import { prisma } from '@/lib/prisma'
 
 // GET - Pobierz rolę użytkownika
 export async function GET(request: NextRequest) {
